@@ -22,7 +22,6 @@ import java.util.List;
 public class FamiliarBookScreen extends Screen {
 
     private final List<StoredFamiliar> familiars =  new ArrayList<>();
-    //private final List<Entity> clientEntities = new ArrayList<>();
     private Entity currentClientEntity = null;
     private int currentPage = 0;
 
@@ -37,7 +36,7 @@ public class FamiliarBookScreen extends Screen {
     private Button releaseButton;
 
     public FamiliarBookScreen(List<StoredFamiliar> familiars) {
-        super(Component.translatable("screen.bookoffamiliars.familiar_book"));
+        super(Component.translatable("bookoffamiliars.familiar_book_screen"));
         this.familiars.addAll(familiars);
     }
 
@@ -99,12 +98,12 @@ public class FamiliarBookScreen extends Screen {
 
         guiGraphics.drawString(this.font,
                 Component.translatable("bookoffamiliars.familiar_book_screen"),
-                this.width / 2 - this.font.width(title) / 2, bookY + 10, 0x000000, false);
+                bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.familiar_book_screen")) / 2, bookY + 10, 0x000000, false);
 
         if (familiars.isEmpty()) {
             guiGraphics.drawString(this.font,
                     Component.translatable("bookoffamiliars.no_familiars_stored"),
-                    this.width / 2 - this.font.width(title) / 2, bookY + BOOK_HEIGHT / 2, 0x000000, false);
+                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + BOOK_HEIGHT / 2, 0x000000, false);
         } else {
             StoredFamiliar familiar = familiars.get(currentPage);
 
