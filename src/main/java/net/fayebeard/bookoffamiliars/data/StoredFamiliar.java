@@ -10,7 +10,7 @@ public record StoredFamiliar(CompoundTag nbt, String entityType, String displayN
         nbt = nbt.copy();
     }
 
-    public CompoundTag toNbt() {
+    /*public CompoundTag toNbt() {
         CompoundTag tag = new CompoundTag();
         tag.put("EntityNbt", nbt);
         tag.putString("EntityType", entityType);
@@ -24,7 +24,7 @@ public record StoredFamiliar(CompoundTag nbt, String entityType, String displayN
                 tag.getString("EntityType"),
                 tag.getString("DisplayName")
         );
-    }
+    }*/
 
     public static final Codec<StoredFamiliar> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(

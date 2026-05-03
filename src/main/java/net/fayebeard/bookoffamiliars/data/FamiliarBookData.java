@@ -1,8 +1,10 @@
 package net.fayebeard.bookoffamiliars.data;
 
+import com.mojang.serialization.DataResult;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -41,7 +43,8 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
         for (StoredFamiliar f : familiars) {
-            list.add(f.toNbt());
+            DataResult<Tag> result = StoredFamiliar.CODEC.encodeStart(NbtOps.INSTANCE, f);
+            result.ifSuccess(list::add);
         }
         tag.put("Familiars", list);
         return tag;
@@ -52,7 +55,8 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
         familiars.clear();
         ListTag list = compoundTag.getList("Familiars", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
-            familiars.add(StoredFamiliar.fromNbt(list.getCompound(i)));
+            StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, list.get(i))
+                    .ifSuccess(familiars::add);
         }
     }
 }

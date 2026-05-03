@@ -109,4 +109,9 @@ public class FamiliarBookItem extends Item {
 
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
+
+    @Override
+    public int getMaxStackSize(ItemStack stack) {
+        return 1;
+    }
 }
