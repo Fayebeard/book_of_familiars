@@ -35,6 +35,12 @@ public class FamiliarBookItem extends Item {
 
         if (level.isClientSide()) return true;
 
+        String entityId = entity.getType().toShortString();
+        if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
+            player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+            return false;
+        }
+
         FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
         int max = Config.MAX_FAMILIARS.get();
         if (data.getFamiliars().size() >= max) {
@@ -53,18 +59,12 @@ public class FamiliarBookItem extends Item {
             }
 
             tamableAnimal.save(nbt);
+
             entityType = tamableAnimal.getType().toShortString();
             displayName = tamableAnimal.hasCustomName()
                     ? tamableAnimal.getCustomName().getString()
                     : tamableAnimal.getType().getDescription().getString();
         } else if (entity instanceof AbstractHorse horse) {
-            if (!Config.ALLOW_HORSE_STORAGE.get()) {
-                if (player instanceof ServerPlayer serverPlayer) {
-                    serverPlayer.sendSystemMessage(Component.translatable("bookoffamiliars.horse_storage_disabled"));
-                }
-                return false;
-            }
-
             if (!horse.isTamed()) return false;
 
             horse.save(nbt);

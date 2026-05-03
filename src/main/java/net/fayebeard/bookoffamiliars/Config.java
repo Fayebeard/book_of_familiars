@@ -2,19 +2,21 @@ package net.fayebeard.bookoffamiliars;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.List;
+
 public class Config {
 
     public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue ALLOW_HORSE_STORAGE = BUILDER
-            .comment("Allow players to store horses in the familiar book.",
-                    "Disable this on servers if you're worried about the potential stealing of horses.")
-            .define("allowHorseStorage", true);
-
     public static final ModConfigSpec.IntValue MAX_FAMILIARS = BUILDER
-            .comment("Maximum number of familiars a player can store in their familiar book.",
-                    "WARNING: Setting this very high may cause performance issues. Maximum is 100.")
+            .comment("Maximum number of familiars a player can store.",
+                    "WARNING: Higher values may cause performance issues, especially on servers.")
             .defineInRange("maxfamiliars", 10, 1, 100);
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ENTITY_BLACKLIST = BUILDER
+            .comment("List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']",
+                    "Tip: blacklist horses if you don't want players stealing other people's.")
+            .defineListAllowEmpty("entityBlackList", List.of(), entry -> entry instanceof String);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

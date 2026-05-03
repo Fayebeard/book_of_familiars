@@ -3,23 +3,15 @@
 
   "itemGroup.bookoffamiliars.familiar_book_tab": "Book of Familiars",
 
-  "screen.bookoffamiliars.familiar_book": "Familiar Book",
-
   "subtitle.bookoffamiliars.familiar_book_open": "Familiar Book opens",
   "subtitle.bookoffamiliars.familiar_book_close": "Familiar Book closes",
   "subtitle.bookoffamiliars.familiar_store": "Familiar stored",
   "subtitle.bookoffamiliars.familiar_release": "Familiar released",
 
-  "sound.bookoffamiliars.familiar_book_open": "Familiar Book opens",
-  "sound.bookoffamiliars.familiar_book_close": "Familiar Book closes",
-  "sound.bookoffamiliars.familiar_store": "Familiar stored",
-  "sound.bookoffamiliars.familiar_release": "Familiar released",
-
   "bookoffamiliars.familiar_stored": "Stored %s in your Familiar Book!",
-  "bookoffamiliars.horse_storage_disabled": "Horse storage is disabled on this server.",
-  "bookoffamiliars.not_your_familiar": "This is not your familiar.",
+  "bookoffamiliars.not_your_familiar": "This entity cannot be stored in your Familiar Book.",
   "bookoffamiliars.book_full": "Your Familiar Book is full! (Maximum: %s)",
   "bookoffamiliars.tooltip": "A beast master's best friend!",
-
-  "configuration.bookoffamiliars.allowHorseStorage": "Allow Horse Storage"
+  "bookoffamiliars.familiar_book_screen": "Familiar Book",
+  "bookoffamiliars.no_familiars_stored": "No Familiars Stored"
 }
