@@ -1,0 +1,24 @@
+{
+  "neoforge.configuration.bookoffamiliars.maxFamiliars": "Max Familiars",
+  "neoforge.configuration.bookoffamiliars.maxFamiliars.tooltip": "Maximum number of familiars a player can store. WARNING: Higher values may cause performance issues, especially on servers.",
+
+  "neoforge.configuration.bookoffamiliars.entityBlacklist": "Entity Blacklist",
+  "neoforge.configuration.bookoffamiliars.entityBlacklist.tooltip": "List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']. Tip: blacklist horses if you don't want players stealing other people's.",
+
+  "item.bookoffamiliars.familiar_book": "Familiar Book",
+
+  "itemGroup.bookoffamiliars.familiar_book_tab": "Book of Familiars",
+
+  "subtitle.bookoffamiliars.familiar_book_open": "Familiar Book opens",
+  "subtitle.bookoffamiliars.familiar_book_close": "Familiar Book closes",
+  "subtitle.bookoffamiliars.familiar_store": "Familiar stored",
+  "subtitle.bookoffamiliars.familiar_release": "Familiar released",
+
+  "bookoffamiliars.familiar_stored": "Stored %s in your Familiar Book!",
+  "bookoffamiliars.not_your_familiar": "This entity cannot be stored in your Familiar Book.",
+  "bookoffamiliars.book_full": "Your Familiar Book is full! (Maximum: %s)",
+  "bookoffamiliars.tooltip": "A beast master's best friend!",
+  "bookoffamiliars.familiar_book_screen": "Familiar Book",
+  "bookoffamiliars.no_familiars_stored": "No Familiars Stored",
+  "bookoffamiliars.release_button": "Release"
+}
