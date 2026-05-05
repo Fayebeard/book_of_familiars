@@ -1,9 +1,9 @@
 {
-  "neoforge.configuration.bookoffamiliars.maxFamiliars": "Max Familiars",
-  "neoforge.configuration.bookoffamiliars.maxFamiliars.tooltip": "Maximum number of familiars a player can store. WARNING: Higher values may cause performance issues, especially on servers.",
+  "bookoffamiliars.configuration.maxFamiliars": "Max Familiars",
+  "bookoffamiliars.configuration.maxFamiliars.tooltip": "Maximum number of familiars a player can store. WARNING: Higher values may cause performance issues, especially on servers.",
 
-  "neoforge.configuration.bookoffamiliars.entityBlacklist": "Entity Blacklist",
-  "neoforge.configuration.bookoffamiliars.entityBlacklist.tooltip": "List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']. Tip: blacklist horses if you don't want players stealing other people's.",
+  "bookoffamiliars.configuration.entityBlacklist": "Entity Blacklist",
+  "bookoffamiliars.configuration.entityBlacklist.tooltip": "List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']. Tip: blacklist horses if you don't want players stealing other people's.",
 
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
