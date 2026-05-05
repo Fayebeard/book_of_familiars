@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "minecraft:bone"
+    },
+    "b": {
+      "item": "minecraft:book"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " I ",
+    "BbB",
+    " I "
+  ],
+  "result": {
+    "count": 1,
+    "item": "bookoffamiliars:familiar_book"
+  }
+}
