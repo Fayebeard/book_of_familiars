@@ -1,4 +1,10 @@
 {
+  "bookoffamiliars.configuration.maxFamiliars": "Max Familiars",
+  "bookoffamiliars.configuration.maxFamiliars.tooltip": "Maximum number of familiars a player can store. WARNING: Higher values may cause performance issues, especially on servers.",
+
+  "bookoffamiliars.configuration.entityBlacklist": "Entity Blacklist",
+  "bookoffamiliars.configuration.entityBlacklist.tooltip": "List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']. Tip: blacklist horses if you don't want players stealing other people's.",
+
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
   "itemGroup.bookoffamiliars.familiar_book_tab": "Book of Familiars",
