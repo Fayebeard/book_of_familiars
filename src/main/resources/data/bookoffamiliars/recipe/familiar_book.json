@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "B": {
-      "item": "minecraft:bone"
-    },
-    "b": {
-      "item": "minecraft:book"
-    },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    }
+    "B": "minecraft:bone",
+    "b": "minecraft:book",
+    "I": "minecraft:iron_ingot"
   },
   "pattern": [
     " I ",
