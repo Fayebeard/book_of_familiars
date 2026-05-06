@@ -113,7 +113,7 @@ public class FamiliarBookScreen extends Screen {
             if (entity instanceof LivingEntity livingEntity) {
                 InventoryScreen.renderEntityInInventoryFollowsMouse(
                         pGuiGraphics,
-                        bookX + 96,
+                        bookX + 92,
                         bookY + 100,
                         35,
                         (float)(bookX + 96) - pMouseX,

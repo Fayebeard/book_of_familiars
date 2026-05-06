@@ -4,14 +4,26 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FamiliarBookData implements INBTSerializable<CompoundTag> {
+public class FamiliarBookData {
 
     private final List<StoredFamiliar> familiars = new ArrayList<>();
+
+    public static FamiliarBookData get(Player player) {
+        FamiliarBookData data = new FamiliarBookData();
+        if (player.getPersistentData().contains("FamiliarData")) {
+            data.deserializeNBT(player.getPersistentData().getCompound("FamiliarData"));
+        }
+        return data;
+    }
+
+    public static void save(Player player, FamiliarBookData data) {
+        player.getPersistentData().put("FamiliarData", data.serializeNBT());
+    }
 
     public List<StoredFamiliar> getFamiliars() {
         return familiars;
@@ -25,13 +37,6 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
         if (index >= 0 && index < familiars.size()) familiars.remove(index);
     }
 
-    public FamiliarBookData copy() {
-        FamiliarBookData copy = new FamiliarBookData();
-        for (StoredFamiliar f : familiars) copy.addFamiliar(f);
-        return copy;
-    }
-
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
@@ -44,7 +49,6 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         familiars.clear();
         ListTag list = nbt.getList("Familiars", Tag.TAG_COMPOUND);

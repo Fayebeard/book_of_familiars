@@ -1,6 +1,6 @@
 package net.fayebeard.bookffamiliars.network;
 
-import net.fayebeard.bookffamiliars.capabilities.ModCapabilities;
+import net.fayebeard.bookffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookffamiliars.item.custom.FamiliarBookItem;
 import net.fayebeard.bookffamiliars.sounds.ModSounds;
@@ -35,28 +35,29 @@ public record ReleaseFamiliarPacket(int index) {
                     || player.getOffhandItem().getItem() instanceof FamiliarBookItem;
             if (!holdingBook) return;
 
-            player.getCapability(ModCapabilities.FAMILIAR_DATA).ifPresent(data -> {
-                List<StoredFamiliar> familiars = data.getFamiliars();
-                if (packet.index < 0 || packet.index >= familiars.size()) return;
+            FamiliarBookData data = FamiliarBookData.get(player);
+            List<StoredFamiliar> familiars = data.getFamiliars();
+            if (packet.index < 0 || packet.index >= familiars.size()) return;
 
-                StoredFamiliar familiar = familiars.get(packet.index);
-                Entity entity = EntityType.loadEntityRecursive(
-                        familiar.nbt(), player.serverLevel(), e -> e);
+            StoredFamiliar familiar = familiars.get(packet.index);
+            Entity entity = EntityType.loadEntityRecursive(
+                    familiar.nbt(), player.serverLevel(), e -> e);
 
-                if (entity != null) {
-                    entity.moveTo(player.getX(), player.getY(), player.getZ(),
-                            player.getXRot(), 0);
-                    player.serverLevel().addFreshEntity(entity);
-                    data.removeFamiliar(packet.index);
-                    player.playNotifySound(ModSounds.FAMILIAR_RELEASE.get(),
-                            SoundSource.PLAYERS, 0.25f, 1.0f);
-                }
+            if (entity != null) {
+                entity.moveTo(player.getX(), player.getY(), player.getZ(),
+                        player.getXRot(), 0);
+                player.serverLevel().addFreshEntity(entity);
+                data.removeFamiliar(packet.index);
+                FamiliarBookData.save(player, data);
+                player.playNotifySound(ModSounds.FAMILIAR_RELEASE.get(),
+                        SoundSource.PLAYERS, 0.25f, 1.0f);
+            }
 
-                ModNetwork.CHANNEL.send(
-                        PacketDistributor.PLAYER.with(() -> player),
-                        new OpenFamiliarBookPacket(data.getFamiliars())
-                );
-            });
+            ModNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    new OpenFamiliarBookPacket(data.getFamiliars())
+            );
+
         });
         ctx.setPacketHandled(true);
     }

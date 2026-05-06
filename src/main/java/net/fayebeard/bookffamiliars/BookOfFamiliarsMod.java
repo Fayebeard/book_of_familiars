@@ -1,7 +1,6 @@
 package net.fayebeard.bookffamiliars;
 
 import com.mojang.logging.LogUtils;
-import net.fayebeard.bookffamiliars.capabilities.ModCapabilities;
 import net.fayebeard.bookffamiliars.events.ModEvents;
 import net.fayebeard.bookffamiliars.item.ModCreativeModeTabs;
 import net.fayebeard.bookffamiliars.item.ModItems;
@@ -38,7 +37,6 @@ public class BookOfFamiliarsMod
 
         ModItems.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
-        ModCapabilities.register(modEventBus);
         ModSounds.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
