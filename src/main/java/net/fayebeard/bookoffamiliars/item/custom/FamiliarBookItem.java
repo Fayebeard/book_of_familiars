@@ -35,7 +35,7 @@ public class FamiliarBookItem extends Item {
 
         if (level.isClientSide()) return true;
 
-        String entityId = entity.getType().toShortString();
+        String entityId = entity.getType().builtInRegistryHolder().key().location().toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
             player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
             return false;
