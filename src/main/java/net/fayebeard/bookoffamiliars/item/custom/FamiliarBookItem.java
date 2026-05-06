@@ -7,6 +7,7 @@ import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.fayebeard.bookoffamiliars.util.ModUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,7 +40,7 @@ public class FamiliarBookItem extends Item {
 
         if (level.isClientSide()) return true;
 
-        String entityId = entity.getType().toShortString();
+        String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
             player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
             return false;

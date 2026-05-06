@@ -15,7 +15,7 @@ public class Config {
             .defineInRange("maxFamiliars", 10, 1, 100);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ENTITY_BLACKLIST = BUILDER
-            .comment("List of entity types that cannot be stored. Format: ['minecraft:wolf', 'minecraft:cat']",
+            .comment("List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]",
                     "Tip: blacklist horses if you don't want players stealing other people's.")
             .translation("bookoffamiliars.configuration.entityBlacklist")
             .defineListAllowEmpty("entityBlacklist", List.of(), entry -> entry instanceof String);
