@@ -15,13 +15,7 @@ import net.minecraftforge.network.PacketDistributor;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class ReleaseFamiliarPacket {
-
-    private final int index;
-
-    public ReleaseFamiliarPacket(int index) {
-        this.index = index;
-    }
+public record ReleaseFamiliarPacket(int index) {
 
     public static void encode(ReleaseFamiliarPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.index);

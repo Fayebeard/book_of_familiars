@@ -12,13 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class OpenFamiliarBookPacket {
-
-    private final List<StoredFamiliar> familiars;
-
-    public OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
-        this.familiars = familiars;
-    }
+public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
 
     public static void encode(OpenFamiliarBookPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.familiars.size());
