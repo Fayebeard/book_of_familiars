@@ -1,0 +1,38 @@
+{
+  "familiar_book_open": {
+    "subtitle": "sound.bookoffamiliars.familiar_book_open",
+    "sounds": [
+      {
+        "name": "bookoffamiliars:familiar_book_open",
+        "stream": false
+      }
+    ]
+  },
+  "familiar_book_close": {
+    "subtitle": "sound.bookoffamiliars.familiar_book_close",
+    "sounds": [
+      {
+        "name": "bookoffamiliars:familiar_book_close",
+        "stream": false
+      }
+    ]
+  },
+  "familiar_store": {
+    "subtitle": "sound.bookoffamiliars.familiar_store",
+    "sounds": [
+      {
+        "name": "bookoffamiliars:familiar_store",
+        "stream": false
+      }
+    ]
+  },
+  "familiar_release": {
+    "subtitle": "sound.bookoffamiliars.familiar_release",
+    "sounds": [
+      {
+        "name": "bookoffamiliars:familiar_release",
+        "stream": false
+      }
+    ]
+  }
+}
