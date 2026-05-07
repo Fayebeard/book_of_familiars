@@ -19,5 +19,6 @@
   "bookoffamiliars.book_full": "Your Familiar Book is full! (Maximum: %s)",
   "bookoffamiliars.tooltip": "A beast master's best friend!",
   "bookoffamiliars.familiar_book_screen": "Familiar Book",
-  "bookoffamiliars.no_familiars_stored": "No Familiars Stored"
+  "bookoffamiliars.no_familiars_stored": "No Familiars Stored",
+  "bookoffamiliars.no_room": "There's not enough space to release your familiar here!"
 }
