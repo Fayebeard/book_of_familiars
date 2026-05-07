@@ -6,6 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.UnknownNullability;
 
@@ -36,6 +37,20 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
             copy.addFamiliar(f);
         }
         return copy;
+    }
+
+    public void renameFamiliar(int index, String newName, HolderLookup.Provider registryAccess) {
+        if (index >= 0 && index < familiars.size()) {
+            StoredFamiliar old = familiars.get(index);
+            CompoundTag nbt = old.nbt().copy();
+            if (newName.isEmpty()) {
+                nbt.remove("CustomName");
+            } else {
+                nbt.putString("CustomName", Component.Serializer.toJson(
+                        Component.literal(newName), registryAccess));
+            }
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
+        }
     }
 
     @Override

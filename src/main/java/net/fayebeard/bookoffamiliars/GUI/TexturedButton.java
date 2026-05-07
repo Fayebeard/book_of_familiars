@@ -1,0 +1,54 @@
+package net.fayebeard.bookoffamiliars.GUI;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+
+public class TexturedButton extends Button {
+
+    private final ResourceLocation texture;
+    private final int textureX;
+    private final int textureY;
+    private final int hoveredTextureY;
+    private final int textureWidth;
+    private final int textureHeight;
+    private final int textureSheetWidth;
+    private final int textureSheetHeight;
+    private final Component label;
+
+    public TexturedButton(int x, int y, int width, int height,
+                          Component label,
+                          ResourceLocation texture,
+                          int textureX, int textureY,
+                          int hoveredTextureY,
+                          int textureWidth, int textureHeight,
+                          int textureSheetWidth, int textureSheetHeight,
+                          OnPress onPress) {
+        super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
+        this.texture = texture;
+        this.textureX = textureX;
+        this.textureY = textureY;
+        this.hoveredTextureY = hoveredTextureY;
+        this.textureWidth = textureWidth;
+        this.textureHeight = textureHeight;
+        this.textureSheetWidth = textureSheetWidth;
+        this.textureSheetHeight = textureSheetHeight;
+        this.label = label;
+    }
+
+    @Override
+    protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        int currentTextureY = isHovered() ? hoveredTextureY : textureY;
+        guiGraphics.blit(texture, getX(), getY(),
+                textureX, currentTextureY,
+                textureWidth, textureHeight,
+                textureSheetWidth, textureSheetHeight);
+
+        guiGraphics.drawString(Minecraft.getInstance().font, label,
+                getX() + (getWidth() - Minecraft.getInstance().font.width(label)) / 2,
+                getY() + (getHeight() - 8) / 2,
+                0x000000, false);
+    }
+}
