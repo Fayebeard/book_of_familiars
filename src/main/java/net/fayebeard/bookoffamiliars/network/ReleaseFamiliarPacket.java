@@ -7,6 +7,8 @@ import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.fayebeard.bookoffamiliars.util.ModUtils;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -54,12 +56,33 @@ public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
 
             StoredFamiliar familiar = familiars.get(index);
 
-            ServerLevel level = (ServerLevel) player.level();
+            ServerLevel level = player.level();
             Entity entity = EntityType.loadEntityRecursive(familiar.nbt(), level, EntitySpawnReason.LOAD, e -> e);
             if (entity != null) {
-                entity.setPos(player.getX(), player.getY(), player.getZ());
+                double angle = Math.toRadians(player.getYRot());
+                double offsetX = -Math.sin(angle) * 2;
+                double offsetZ = Math.cos(angle) * 2;
+
+                double targetX = player.getX() + offsetX;
+                double targetY = player.getY();
+                double targetZ = player.getZ() + offsetZ;
+
+                entity.setPos(targetX, targetY, targetZ);
                 entity.setYRot(player.getYRot());
+
+                if (!level.noCollision(entity)) {
+                    entity.setPos(player.getX(), player.getY(), player.getZ());
+                    entity.setYRot(player.getYRot());
+
+                    if (!level.noCollision(entity)) {
+                        player.sendSystemMessage(Component.translatable("bookoffamiliars.no_room"));
+                        return;
+                    }
+                }
+
                 level.addFreshEntity(entity);
+                level.sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
+                        50, 0.5, 0.5, 0.5, 0.5);
                 data.removeFamiliar(index);
                 ModUtils.playSound(player, ModSounds.FAMILIAR_RELEASE.get());
             }

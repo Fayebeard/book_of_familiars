@@ -7,9 +7,11 @@ import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.fayebeard.bookoffamiliars.util.ModUtils;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
@@ -88,6 +90,9 @@ public class FamiliarBookItem extends Item {
 
         StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName);
         player.getData(ModAttachments.FAMILIAR_DATA).addFamiliar(familiar);
+        ServerLevel serverLevel = (ServerLevel) level;
+        serverLevel.sendParticles(ParticleTypes.POOF,
+                entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(), 15, 0.3, 0.3, 0.3, 0.05);
         entity.discard();
 
         if (player instanceof ServerPlayer serverPlayer) {
