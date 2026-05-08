@@ -153,7 +153,7 @@ public class FamiliarBookScreen extends Screen {
                 InventoryScreen.renderEntityInInventoryFollowsMouse(
                         pGuiGraphics,
                         bookX + 92,
-                        bookY + 100,
+                        bookY + 90,
                         (int) scale,
                         (float)(bookX + 96) - pMouseX,
                         (float)(bookY + 80) - pMouseY,
@@ -245,6 +245,6 @@ public class FamiliarBookScreen extends Screen {
     }
 
     public void renderBookBackground(GuiGraphics guiGraphics) {
-        guiGraphics.blit(BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0, 0, BOOK_WIDTH, BOOK_HEIGHT, 256, 256);
+        guiGraphics.blit(BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0, 0, BOOK_WIDTH, BOOK_HEIGHT - 1, 256, 256);
     }
 }
