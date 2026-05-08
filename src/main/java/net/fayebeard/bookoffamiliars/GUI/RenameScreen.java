@@ -34,7 +34,7 @@ public class RenameScreen extends Screen {
         renameField.setFocused(true);
         this.addRenderableWidget(renameField);
 
-        this.addRenderableWidget(Button.builder(Component.literal("Confirm"), btn -> confirmRename())
+        this.addRenderableWidget(Button.builder(Component.translatable("bookoffamiliars.confirm_button"), btn -> confirmRename())
                 .bounds(this.width / 2 - 50, this.height / 2 + 15, 100, 20)
                 .build());
     }
@@ -68,8 +68,8 @@ public class RenameScreen extends Screen {
         guiGraphics.fill(this.width / 2 - 104, this.height / 2 - 29,
                 this.width / 2 + 104, this.height / 2 + 39, 0xFFf5f0e8);
 
-        guiGraphics.drawString(this.font, Component.literal("Rename Familiar"),
-                this.width / 2 - this.font.width("Rename Familiar") / 2,
+        guiGraphics.drawString(this.font, Component.translatable("bookoffamiliars.rename_familiar"),
+                this.width / 2 - this.font.width(Component.translatable("bookoffamiliars.rename_familiar")) / 2,
                 this.height / 2 - 22, 0x000000, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
