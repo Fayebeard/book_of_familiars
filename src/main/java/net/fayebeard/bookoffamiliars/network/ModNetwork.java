@@ -25,5 +25,11 @@ public class ModNetwork {
                 .decoder(ReleaseFamiliarPacket::decode)
                 .consumerMainThread(ReleaseFamiliarPacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(RenameFamiliarPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(RenameFamiliarPacket::encode)
+                .decoder(RenameFamiliarPacket::decode)
+                .consumerMainThread(RenameFamiliarPacket::handle)
+                .add();
     }
 }

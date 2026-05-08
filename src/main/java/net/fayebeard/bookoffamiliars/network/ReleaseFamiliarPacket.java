@@ -4,7 +4,9 @@ import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -41,9 +43,27 @@ public record ReleaseFamiliarPacket(int index) {
                 familiar.nbt(), player.serverLevel(), e -> e);
 
         if (entity != null) {
-            entity.moveTo(player.getX(), player.getY(), player.getZ(),
-                    player.getXRot(), 0);
+            double angle = Math.toRadians(player.getYRot());
+            double offsetX = -Math.sin(angle) * 2;
+            double offsetZ = Math.cos(angle) * 2;
+
+            double targetX = player.getX() + offsetX;
+            double targetY = player.getY();
+            double targetZ = player.getZ() + offsetZ;
+
+            entity.moveTo(targetX, targetY, targetZ, player.getYRot(), 0);
+
+            if (!player.serverLevel().noCollision(entity)) {
+                entity.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0);
+
+                if (!player.serverLevel().noCollision(entity)) {
+                    player.sendSystemMessage(Component.translatable("bookoffamiliars.no_room"));
+                    return;
+                }
+            }
             player.serverLevel().addFreshEntity(entity);
+            player.serverLevel().sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
+                    50, 0.5, 0.5, 0.5, 0.5);
             data.removeFamiliar(packet.index());
             FamiliarBookData.save(player, data);
             player.playNotifySound(ModSounds.FAMILIAR_RELEASE.get(),
