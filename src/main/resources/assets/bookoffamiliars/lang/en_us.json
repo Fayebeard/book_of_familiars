@@ -14,5 +14,9 @@
   "bookoffamiliars.tooltip": "A beast master's best friend!",
   "bookoffamiliars.familiar_book_screen": "Familiar Book",
   "bookoffamiliars.no_familiars_stored": "No Familiars Stored",
-  "bookoffamiliars.release_button": "Release"
+  "bookoffamiliars.release_button": "Release",
+  "bookoffamiliars.no_room": "There's not enough space to release your familiar here!",
+  "bookoffamiliars.rename_button": "Rename",
+  "bookoffamiliars.confirm_button": "Confirm",
+  "bookoffamiliars.rename_familiar": "Rename Familiar"
 }

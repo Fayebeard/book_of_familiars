@@ -32,5 +32,12 @@ public class ModNetwork {
                 ReleaseFamiliarPacket::decode,
                 ReleaseFamiliarPacket::handle
         );
+
+        CHANNEL.registerMessage(id++,
+                RenameFamiliarPacket.class,
+                RenameFamiliarPacket::encode,
+                RenameFamiliarPacket::decode,
+                RenameFamiliarPacket::handle
+        );
     }
 }

@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
@@ -56,6 +57,20 @@ public class FamiliarBookData {
             StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, list.get(i))
                     .result()
                     .ifPresent(familiars::add);
+        }
+    }
+
+    public void renameFamiliar(int index, String newName) {
+        if (index >= 0 && index < familiars.size()) {
+            StoredFamiliar old = familiars.get(index);
+            CompoundTag nbt = old.nbt().copy();
+            if (newName.isEmpty()) {
+                nbt.remove("CustomName");
+            } else {
+                nbt.putString("CustomName", Component.Serializer.toJson(
+                        Component.literal(newName)));
+            }
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
         }
     }
 }
