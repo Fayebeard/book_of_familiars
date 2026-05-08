@@ -206,7 +206,7 @@ public class FamiliarBookScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderTransparentBackground(pGuiGraphics);
-        pGuiGraphics.blit(BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0, 0, BOOK_WIDTH, BOOK_HEIGHT, 256, 256);
+        pGuiGraphics.blit(BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0, 0, BOOK_WIDTH, BOOK_HEIGHT - 1, 256, 256);
     }
 
     @Override
