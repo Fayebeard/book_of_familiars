@@ -17,16 +17,18 @@ public class TexturedButton extends Button {
     private final int textureSheetWidth;
     private final int textureSheetHeight;
     private final Component label;
+    private final int labelOffsetX;
 
     public TexturedButton(int x, int y, int width, int height,
                           Component label,
+                          int labelOffsetX,
                           ResourceLocation texture,
                           int textureX, int textureY,
                           int hoveredTextureY,
                           int textureWidth, int textureHeight,
                           int textureSheetWidth, int textureSheetHeight,
                           OnPress onPress) {
-        super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
+        super(x, y, width, height, label, onPress, DEFAULT_NARRATION);
         this.texture = texture;
         this.textureX = textureX;
         this.textureY = textureY;
@@ -36,6 +38,7 @@ public class TexturedButton extends Button {
         this.textureSheetWidth = textureSheetWidth;
         this.textureSheetHeight = textureSheetHeight;
         this.label = label;
+        this.labelOffsetX = labelOffsetX;
     }
 
     @Override
@@ -47,8 +50,8 @@ public class TexturedButton extends Button {
                 textureSheetWidth, textureSheetHeight);
 
         guiGraphics.drawString(Minecraft.getInstance().font, label,
-                getX() + (getWidth() - Minecraft.getInstance().font.width(label)) / 2,
+                getX() + (getWidth() - Minecraft.getInstance().font.width(label)) / 2 + labelOffsetX,
                 getY() + (getHeight() - 8) / 2,
-                0x000000, false);
+                0xFFD700, true);
     }
 }
