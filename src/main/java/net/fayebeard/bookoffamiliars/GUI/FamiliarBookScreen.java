@@ -193,7 +193,7 @@ public class FamiliarBookScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         this.extractTransparentBackground(graphics);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0.0F, 0.0F, BOOK_WIDTH, BOOK_HEIGHT, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0.0F, 0.0F, BOOK_WIDTH, BOOK_HEIGHT - 1, 256, 256);
     }
 
     @Override
