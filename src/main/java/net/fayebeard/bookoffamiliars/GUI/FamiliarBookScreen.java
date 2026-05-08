@@ -71,8 +71,9 @@ public class FamiliarBookScreen extends Screen {
             }
         }, true);
 
-        releaseButton = new TexturedButton(bookX + 40, bookY + 147,
-                51, 13,
+        releaseButton = new TexturedButton(
+                bookX + 40, bookY + 147,
+                53, 15,
                 Component.translatable("bookoffamiliars.release_button"),
                 0,
                 BOOK_TEXTURE,
@@ -90,7 +91,7 @@ public class FamiliarBookScreen extends Screen {
 
         renameButton = new TexturedButton(
                 bookX + 94, bookY + 147,
-                51, 13,
+                53, 15,
                 Component.translatable("bookoffamiliars.rename_button"),
                 1,
                 BOOK_TEXTURE,
