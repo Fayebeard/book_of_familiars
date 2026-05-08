@@ -6,6 +6,7 @@ import net.fayebeard.bookoffamiliars.item.ModCreativeModeTabs;
 import net.fayebeard.bookoffamiliars.item.ModItems;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.network.ReleaseFamiliarPacket;
+import net.fayebeard.bookoffamiliars.network.RenameFamiliarPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -64,6 +65,12 @@ public class BookOfFamiliarsMod {
           ReleaseFamiliarPacket.TYPE,
           ReleaseFamiliarPacket.STREAM_CODEC,
           ReleaseFamiliarPacket::handle
+        );
+
+        registrar.playToServer(
+                RenameFamiliarPacket.TYPE,
+                RenameFamiliarPacket.STREAM_CODEC,
+                RenameFamiliarPacket::handle
         );
     }
 

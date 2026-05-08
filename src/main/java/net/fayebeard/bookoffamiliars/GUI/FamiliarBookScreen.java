@@ -37,6 +37,7 @@ public class FamiliarBookScreen extends Screen {
     private PageButton prevButton;
     private PageButton nextButton;
     private Button releaseButton;
+    private Button renameButton;
 
     public FamiliarBookScreen(List<StoredFamiliar> familiars) {
         super(Component.translatable("bookoffamiliars.familiar_book_screen"));
@@ -48,8 +49,9 @@ public class FamiliarBookScreen extends Screen {
         super.init();
 
         int bookX = (this.width - BOOK_WIDTH) / 2;
+        int bookY = 2;
 
-        prevButton = new PageButton(bookX + 43, 159, false, btn -> {
+        prevButton = new PageButton(bookX + 67, bookY + 160, false, btn -> {
             if (currentPage > 0) {
                 currentPage--;
                 if (currentClientEntity  != null) {
@@ -60,7 +62,7 @@ public class FamiliarBookScreen extends Screen {
             }
         }, true);
 
-        nextButton = new PageButton(bookX + 116, 159, true, btn -> {
+        nextButton = new PageButton(bookX + 94, bookY + 160, true, btn -> {
             if (currentPage < familiars.size() - 1) {
                 currentPage++;
                 if (currentClientEntity != null) {
@@ -71,17 +73,46 @@ public class FamiliarBookScreen extends Screen {
             }
         }, true);
 
-        releaseButton = Button.builder(Component.translatable("bookoffamiliars.release_button"), btn -> {
-            if (!familiars.isEmpty()) {
-                ClientPacketDistributor.sendToServer(new ReleaseFamiliarPacket(currentPage));
-            }
-        })
-                .bounds(bookX + 92 - 25, 159, 50, 16)
-                .build();
+        releaseButton = new TexturedButton(
+                bookX + 40, bookY + 147,
+                53, 15,
+                Component.translatable("bookoffamiliars.release_button"),
+                0,
+                BOOK_TEXTURE,
+                54, 191,
+                207,
+                53, 15,
+                256, 256,
+                btn -> {
+                    if (!familiars.isEmpty()) {
+                        ClientPacketDistributor.sendToServer(new ReleaseFamiliarPacket(currentPage));
+                    }
+                }
+        );
+
+        renameButton = new TexturedButton(
+                bookX + 94, bookY + 147,
+                53, 15,
+                Component.translatable("bookoffamiliars.rename_button"),
+                0,
+                BOOK_TEXTURE,
+                54, 191,
+                207,
+                53, 15,
+                256, 256,
+                btn -> {
+                    if (!familiars.isEmpty()) {
+                        Minecraft.getInstance().setScreen(
+                                new RenameScreen(this, currentPage, familiars.get(currentPage).displayName())
+                        );
+                    }
+                }
+        );
 
         this.addRenderableWidget(prevButton);
         this.addRenderableWidget(nextButton);
         this.addRenderableWidget(releaseButton);
+        this.addRenderableWidget(renameButton);
 
         updateButtonStates();
     }
@@ -90,6 +121,7 @@ public class FamiliarBookScreen extends Screen {
         prevButton.visible = currentPage > 0;
         nextButton.visible = currentPage < familiars.size() - 1;
         releaseButton.visible = !familiars.isEmpty();
+        renameButton.visible = !familiars.isEmpty();
     }
 
     @Override
@@ -112,24 +144,45 @@ public class FamiliarBookScreen extends Screen {
 
             Entity entity = getCurrentClientEntity();
             if (entity instanceof LivingEntity livingEntity) {
+                float entityHeight = livingEntity.getBbHeight();
+                float entityWidth = livingEntity.getBbWidth();
+                float maxDimension = Math.max(entityHeight, entityWidth);
+                float boxHeight = 105 - 41;
+                float scale = Math.min(35, (boxHeight / maxDimension) * 0.5f);
+
                 InventoryScreen.extractEntityInInventoryFollowsMouse(
                         graphics,
-                        bookX + 46, bookY + 30,
-                        bookX + BOOK_WIDTH - 46, bookY + 130,
-                        35,
+                        bookX + 44, bookY + 41,
+                        bookX + 140, bookY + 105,
+                        (int) scale,
                         0,
                         mouseX, mouseY,
                         livingEntity
                 );
             }
 
+            String displayName = familiar.displayName();
+            while (this.font.width(displayName) > 84 && displayName.length() > 0) {
+                displayName = displayName.substring(0, displayName.length() - 1);
+            }
+            if (displayName.length() < familiar.displayName().length()) {
+                displayName = displayName + "...";
+            }
             graphics.text(this.font,
-                    Component.literal(familiar.displayName()),
-                    bookX + 92 - this.font.width(familiar.displayName()) / 2, bookY + 135, 0xFF000000, false);
+                    Component.literal(displayName),
+                    bookX + 92 - this.font.width(displayName) / 2, bookY + 118, 0xFF000000, false);
 
+
+            String entityType = Component.translatable(familiar.entityType()).getString();
+            while (this.font.width(entityType) > 60 && entityType.length() > 0) {
+                entityType = entityType.substring(0, entityType.length() - 1);
+            }
+            if (entityType.length() < Component.translatable(familiar.entityType()).getString().length()) {
+                entityType = entityType + "...";
+            }
             graphics.text(this.font,
-                    Component.literal(familiar.entityType()),
-                    bookX + 92 - this.font.width(familiar.entityType()) / 2 - 1, bookY + 147, 0xFF444444, false);
+                    Component.literal(entityType),
+                    bookX + 93 - this.font.width(entityType) / 2, bookY + 134, 0xFF444444, false);
 
             Component pageMsg = Component.translatable("book.pageIndicator", currentPage + 1, familiars.size());
             int pageMsgWidth = this.font.width(pageMsg);

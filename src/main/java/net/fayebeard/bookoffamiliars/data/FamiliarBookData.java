@@ -2,6 +2,8 @@ package net.fayebeard.bookoffamiliars.data;
 
 
 import com.mojang.serialization.MapCodec;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,5 +43,18 @@ public class FamiliarBookData {
             copy.addFamiliar(f);
         }
         return copy;
+    }
+
+    public void renameFamiliar(int index, String newName, HolderLookup.Provider registryAccess) {
+        if (index >= 0 && index < familiars.size()) {
+            StoredFamiliar old = familiars.get(index);
+            CompoundTag nbt = old.nbt().copy();
+            if (newName.isEmpty()) {
+                nbt.remove("CustomName");
+            } else {
+                nbt.putString("CustomName", newName);
+            }
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
+        }
     }
 }
