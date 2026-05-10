@@ -1,9 +1,7 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
-import net.fayebeard.bookoffamiliars.GUI.FamiliarBookScreen;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -45,12 +43,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
 
     public static void handle(OpenFamiliarBookPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.screen instanceof FamiliarBookScreen existingScreen) {
-                existingScreen.refresh(packet.familiars());
-            } else {
-                mc.setScreen(new FamiliarBookScreen(packet.familiars()));
-            }
+            ClientPacketHandlers.handleOpenFamiliarBook(packet);
         });
     }
 }
