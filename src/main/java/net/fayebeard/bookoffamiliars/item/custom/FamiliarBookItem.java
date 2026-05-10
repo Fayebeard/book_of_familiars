@@ -17,7 +17,11 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -29,6 +33,8 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class FamiliarBookItem extends Item {
@@ -77,6 +83,12 @@ public class FamiliarBookItem extends Item {
         } else if (entity instanceof AbstractHorse horse) {
             if (!horse.isTamed()) return false;
 
+            EntityReference<LivingEntity> ownerRef = horse.getOwnerReference();
+            if (ownerRef == null || !ownerRef.getUUID().equals(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             horse.save(output);
             nbt = output.buildResult();
@@ -84,6 +96,26 @@ public class FamiliarBookItem extends Item {
             displayName = horse.hasCustomName()
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
+        } else if (entity instanceof Allay allay) {
+            if (!allay.hasItemInHand()) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
+            Optional<UUID> likedPlayer = allay.getBrain()
+                    .getMemory(MemoryModuleType.LIKED_PLAYER);
+            if (likedPlayer.isEmpty() || !likedPlayer.get().equals(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
+            TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+            allay.save(output);
+            nbt = output.buildResult();
+            entityType = allay.getType().getDescriptionId();
+            displayName = allay.hasCustomName()
+                    ? allay.getCustomName().getString()
+                    : allay.getType().getDescription().getString();
         } else {
             return false;
         }
