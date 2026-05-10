@@ -20,8 +20,7 @@ public class Config
             .defineInRange("maxFamiliars", 10, 1, 100);
 
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ENTITY_BLACKLIST = BUILDER
-            .comment("List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]",
-                    "Tip: blacklist horses if you don't want players stealing other people's.")
+            .comment("List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]")
             .defineListAllowEmpty("entityBlacklist", List.of(), entry -> entry instanceof String);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
