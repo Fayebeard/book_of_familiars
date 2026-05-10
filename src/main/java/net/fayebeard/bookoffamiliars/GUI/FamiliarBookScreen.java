@@ -138,7 +138,7 @@ public class FamiliarBookScreen extends Screen {
         if (familiars.isEmpty()) {
             graphics.text(this.font,
                     Component.translatable("bookoffamiliars.no_familiars_stored"),
-                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + BOOK_HEIGHT / 2, 0xFF000000, false);
+                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + 70, 0xFF000000, false);
         } else {
             StoredFamiliar familiar = familiars.get(currentPage);
 

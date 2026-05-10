@@ -1,14 +1,12 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
-import net.fayebeard.bookoffamiliars.GUI.FamiliarBookScreen;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
-import net.fayebeard.bookoffamiliars.sounds.ModSounds;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
@@ -46,12 +44,8 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
 
     public static void handle(OpenFamiliarBookPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.screen instanceof FamiliarBookScreen existingScreen) {
-                existingScreen.refresh(packet.familiars());
-            } else {
-                mc.setScreen(new FamiliarBookScreen(packet.familiars()));
-                mc.player.playSound(ModSounds.FAMILIAR_BOOK_OPEN.get(), 0.25f, 1.0f);
+            if (FMLEnvironment.getDist().isClient()) {
+                ClientPacketHandlers.handleOpenFamiliarBook(packet);
             }
         });
     }
