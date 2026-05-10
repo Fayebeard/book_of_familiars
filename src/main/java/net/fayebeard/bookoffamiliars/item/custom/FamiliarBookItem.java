@@ -80,6 +80,7 @@ public class FamiliarBookItem extends Item {
             displayName = tamableAnimal.hasCustomName()
                     ? tamableAnimal.getCustomName().getString()
                     : tamableAnimal.getType().getDescription().getString();
+
         } else if (entity instanceof AbstractHorse horse) {
             if (!horse.isTamed()) return false;
 
@@ -96,11 +97,8 @@ public class FamiliarBookItem extends Item {
             displayName = horse.hasCustomName()
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
+
         } else if (entity instanceof Allay allay) {
-            if (!allay.hasItemInHand()) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
-                return false;
-            }
 
             Optional<UUID> likedPlayer = allay.getBrain()
                     .getMemory(MemoryModuleType.LIKED_PLAYER);
@@ -116,6 +114,16 @@ public class FamiliarBookItem extends Item {
             displayName = allay.hasCustomName()
                     ? allay.getCustomName().getString()
                     : allay.getType().getDescription().getString();
+
+        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)) {
+            TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+            entity.save(output);
+            nbt = output.buildResult();
+            entityType = entity.getType().getDescriptionId();
+            displayName = entity.hasCustomName()
+                    ? entity.getCustomName().getString()
+                    : entity.getType().getDescription().getString();
+
         } else {
             return false;
         }
