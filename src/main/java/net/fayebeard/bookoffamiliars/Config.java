@@ -22,6 +22,11 @@ public class Config {
             .comment("List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]")
             .defineListAllowEmpty("entityBlacklist", List.of(), entry -> entry instanceof String);
 
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> ENTITY_WHITELIST = BUILDER
+            .comment("List of additional entity types that can be stored beyond the default tamed entities.",
+                    "Format: [\"minecraft:cow\", \"minecraft:sheep\"]")
+            .defineListAllowEmpty("entityWhitelist", List.of(), entry -> entry instanceof String);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     @SubscribeEvent
