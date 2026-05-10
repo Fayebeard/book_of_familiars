@@ -16,6 +16,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -27,6 +29,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class FamiliarBookItem extends Item {
     public FamiliarBookItem(Properties properties) {
@@ -74,11 +78,31 @@ public class FamiliarBookItem extends Item {
                     : tamableAnimal.getType().getDescription().getString();
         } else if (entity instanceof AbstractHorse horse) {
             if (!horse.isTamed()) return false;
+
+            UUID ownerUUID = horse.getOwnerUUID();
+            if (ownerUUID == null || !ownerUUID.equals(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
             horse.save(nbt);
             entityType = horse.getType().getDescriptionId();
             displayName = horse.hasCustomName()
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
+        } else if (entity instanceof Allay allay) {
+            Optional<UUID> likedPlayer = allay.getBrain()
+                    .getMemory(MemoryModuleType.LIKED_PLAYER);
+            if (likedPlayer.isEmpty() || !likedPlayer.get().equals(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
+            allay.save(nbt);
+            entityType = allay.getType().getDescriptionId();
+            displayName = allay.hasCustomName()
+                    ? allay.getCustomName().getString()
+                    : allay.getType().getDescription().getString();
         } else {
                 return false;
         }
