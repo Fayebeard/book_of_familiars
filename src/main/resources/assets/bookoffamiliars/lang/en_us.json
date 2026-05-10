@@ -5,6 +5,9 @@
   "bookoffamiliars.configuration.entityBlacklist": "Entity Blacklist",
   "bookoffamiliars.configuration.entityBlacklist.tooltip": "List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]",
 
+  "bookoffamiliars.configuration.entityWhitelist": "Entity Whitelist",
+  "bookoffamiliars.configuration.entityWhitelist.tooltip": "List of additional entity types that can be stored beyond the default tamed entities. Format: [\"minecraft:cow\", \"minecraft:sheep\"]",
+
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
   "itemGroup.bookoffamiliars.familiar_book_tab": "Book of Familiars",

@@ -19,5 +19,11 @@ public class Config {
             .translation("bookoffamiliars.configuration.entityBlacklist")
             .defineListAllowEmpty("entityBlacklist", List.of(), entry -> entry instanceof String);
 
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ENTITY_WHITELIST = BUILDER
+            .comment("List of additional entity types that can be stored beyond the default tamed entities.",
+                    "Format: [\"minecraft:cow\", \"minecraft:sheep\"]")
+            .translation("bookoffamiliars.configuration.entityWhitelist")
+            .defineListAllowEmpty("entityWhitelist", List.of(), entry -> entry instanceof String);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 }
