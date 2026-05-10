@@ -1,11 +1,11 @@
 package net.fayebeard.bookffamiliars.network;
 
-import net.fayebeard.bookffamiliars.GUI.FamiliarBookScreen;
 import net.fayebeard.bookffamiliars.data.StoredFamiliar;
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -38,12 +38,8 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
     public static void handle(OpenFamiliarBookPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context ctx = contextSupplier.get();
         ctx.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.screen instanceof FamiliarBookScreen existingScreen) {
-                existingScreen.refresh(packet.familiars);
-            } else {
-                mc.setScreen(new FamiliarBookScreen(packet.familiars));
-            }
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                    ClientPacketHandlers.handleOpenFamiliarBook(packet));
         });
         ctx.setPacketHandled(true);
     }

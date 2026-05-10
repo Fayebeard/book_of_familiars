@@ -15,10 +15,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class FamiliarBookScreen extends Screen {
 
     private final List<StoredFamiliar> familiars = new ArrayList<>();
@@ -138,7 +141,7 @@ public class FamiliarBookScreen extends Screen {
         if (familiars.isEmpty()) {
             pGuiGraphics.drawString(this.font,
                     Component.translatable("bookoffamiliars.no_familiars_stored"),
-                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + BOOK_HEIGHT / 2, 0x000000, false);
+                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + 70, 0x000000, false);
         } else {
             StoredFamiliar familiar = familiars.get(currentPage);
 
