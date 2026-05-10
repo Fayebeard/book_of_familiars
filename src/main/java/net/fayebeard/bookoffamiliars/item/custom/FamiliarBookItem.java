@@ -85,13 +85,8 @@ public class FamiliarBookItem extends Item {
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
         } else if (entity instanceof Allay allay) {
-            if (!allay.hasItemInHand()) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
-                return false;
-            }
-
             Optional<UUID> likedPlayer = allay.getBrain()
-                            .getMemory(MemoryModuleType.LIKED_PLAYER);
+                    .getMemory(MemoryModuleType.LIKED_PLAYER);
             if (likedPlayer.isEmpty() || !likedPlayer.get().equals(player.getUUID())) {
                 player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
                 return false;
