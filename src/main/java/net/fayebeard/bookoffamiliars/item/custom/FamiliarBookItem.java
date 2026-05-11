@@ -72,10 +72,8 @@ public class FamiliarBookItem extends Item {
                     : tamableAnimal.getType().getDescription().getString();
 
         } else if (entity instanceof AbstractHorse horse) {
-            if (!horse.isTamed()) return false;
-
             UUID ownerUUID = horse.getOwnerUUID();
-            if (ownerUUID == null || !ownerUUID.equals(player.getUUID())) {
+            if (!horse.isTamed() || (ownerUUID != null && !ownerUUID.equals(player.getUUID()))) {
                 player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
                 return false;
             }
