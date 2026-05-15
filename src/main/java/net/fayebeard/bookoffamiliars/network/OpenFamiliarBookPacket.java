@@ -7,6 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
     public static final StreamCodec<ByteBuf, OpenFamiliarBookPacket> STREAM_CODEC =
             new StreamCodec<>() {
                 @Override
-                public OpenFamiliarBookPacket decode(ByteBuf byteBuf) {
+                public @NotNull OpenFamiliarBookPacket decode(ByteBuf byteBuf) {
                     int size = byteBuf.readInt();
                     List<StoredFamiliar> list = new ArrayList<>();
                     for (int i = 0; i < size; i++) {
@@ -37,13 +38,11 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
             };
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
     public static void handle(OpenFamiliarBookPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            ClientPacketHandlers.handleOpenFamiliarBook(packet);
-        });
+        context.enqueueWork(() -> ClientPacketHandlers.handleOpenFamiliarBook(packet));
     }
 }
