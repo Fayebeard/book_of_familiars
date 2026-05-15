@@ -20,7 +20,6 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -96,8 +95,7 @@ public class FamiliarBookItem extends Item {
                     : tamableAnimal.getType().getDescription().getString();
 
         } else if (entity instanceof AbstractHorse horse) {
-            EntityReference<LivingEntity> ownerRef = horse.getOwnerReference();
-            if (!horse.isTamed() || (ownerRef != null && !ownerRef.getUUID().equals(player.getUUID()))) {
+            if (!horse.isTamed()) {
                 player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
                 return false;
             }
@@ -105,6 +103,7 @@ public class FamiliarBookItem extends Item {
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             horse.save(output);
             nbt = output.buildResult();
+            if (!checkAndSetOwnership(player, nbt)) return false;
             entityType = horse.getType().getDescriptionId();
             displayName = horse.hasCustomName() && horse.getCustomName() != null
                     ? horse.getCustomName().getString()
