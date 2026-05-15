@@ -10,6 +10,7 @@ import net.fayebeard.bookoffamiliars.util.ModUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
@@ -31,6 +33,7 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,14 +46,14 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
+    public boolean onLeftClickEntity(@NonNull ItemStack stack, Player player, @NonNull Entity entity) {
         Level level = player.level();
 
         if (level.isClientSide()) return true;
 
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+            player.sendSystemMessage(Component.translatable("bookoffamiliars.cannot_be_stored"));
             return false;
         }
 
@@ -76,16 +79,14 @@ public class FamiliarBookItem extends Item {
             tamableAnimal.save(output);
             nbt = output.buildResult();
 
-            entityType = tamableAnimal.getType().toShortString();
-            displayName = tamableAnimal.hasCustomName()
+            entityType = tamableAnimal.getType().getDescriptionId();
+            displayName = tamableAnimal.hasCustomName() && tamableAnimal.getCustomName() != null
                     ? tamableAnimal.getCustomName().getString()
                     : tamableAnimal.getType().getDescription().getString();
 
         } else if (entity instanceof AbstractHorse horse) {
-            if (!horse.isTamed()) return false;
-
             EntityReference<LivingEntity> ownerRef = horse.getOwnerReference();
-            if (ownerRef == null || !ownerRef.getUUID().equals(player.getUUID())) {
+            if (!horse.isTamed() || (ownerRef != null && !ownerRef.getUUID().equals(player.getUUID()))) {
                 player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
                 return false;
             }
@@ -93,8 +94,8 @@ public class FamiliarBookItem extends Item {
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             horse.save(output);
             nbt = output.buildResult();
-            entityType = horse.getType().toShortString();
-            displayName = horse.hasCustomName()
+            entityType = horse.getType().getDescriptionId();
+            displayName = horse.hasCustomName() && horse.getCustomName() != null
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
 
@@ -111,7 +112,7 @@ public class FamiliarBookItem extends Item {
             allay.save(output);
             nbt = output.buildResult();
             entityType = allay.getType().getDescriptionId();
-            displayName = allay.hasCustomName()
+            displayName = allay.hasCustomName() && allay.getCustomName() != null
                     ? allay.getCustomName().getString()
                     : allay.getType().getDescription().getString();
 
@@ -120,7 +121,7 @@ public class FamiliarBookItem extends Item {
             entity.save(output);
             nbt = output.buildResult();
             entityType = entity.getType().getDescriptionId();
-            displayName = entity.hasCustomName()
+            displayName = entity.hasCustomName() && entity.getCustomName() != null
                     ? entity.getCustomName().getString()
                     : entity.getType().getDescription().getString();
 
@@ -128,7 +129,27 @@ public class FamiliarBookItem extends Item {
             return false;
         }
 
-        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName);
+        float currentHealth = 0f;
+        float maxHealth = 0f;
+        float speed = 0f;
+        float attackDamage = 0f;
+        boolean hasAttackDamage = false;
+        int itemCount = -1;
+
+        if (entity instanceof LivingEntity livingEntity) {
+            currentHealth = livingEntity.getHealth();
+            maxHealth = livingEntity.getMaxHealth();
+            speed = (float) livingEntity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+            if (nbt.contains("Items")) {
+                itemCount = nbt.getList("Items").map(ListTag::size).orElse(-1);
+            }
+            if (livingEntity.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+                attackDamage = (float) livingEntity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+                hasAttackDamage = true;
+            }
+        }
+
+        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName, currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount);
         player.getData(ModAttachments.FAMILIAR_DATA).addFamiliar(familiar);
         ServerLevel serverLevel = (ServerLevel) level;
         serverLevel.sendParticles(ParticleTypes.POOF,
@@ -145,7 +166,7 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public @NonNull InteractionResult use(Level level, @NonNull Player player, @NonNull InteractionHand hand) {
         if (!level.isClientSide()) {
             ServerPlayer serverPlayer = (ServerPlayer) player;
             List<StoredFamiliar> familiars = serverPlayer.getData(ModAttachments.FAMILIAR_DATA).getFamiliars();
@@ -155,8 +176,9 @@ public class FamiliarBookItem extends Item {
         return InteractionResult.SUCCESS;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void appendHoverText(ItemStack itemStack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag tooltipFlag) {
+    public void appendHoverText(@NonNull ItemStack itemStack, @NonNull TooltipContext context, @NonNull TooltipDisplay display, Consumer<Component> builder, @NonNull TooltipFlag tooltipFlag) {
         builder.accept(
                 Component.translatable("bookoffamiliars.tooltip")
                         .withStyle(style -> style.withColor(0x7a6a5a))
@@ -166,7 +188,7 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public int getMaxStackSize(ItemStack stack) {
+    public int getMaxStackSize(@NonNull ItemStack stack) {
         return 1;
     }
 }
