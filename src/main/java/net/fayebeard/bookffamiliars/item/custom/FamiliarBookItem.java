@@ -8,6 +8,9 @@ import net.fayebeard.bookffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookffamiliars.sounds.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,8 +22,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -103,12 +110,37 @@ public class FamiliarBookItem extends Item {
                     ? allay.getCustomName().getString()
                     : allay.getType().getDescription().getString();
 
-        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)) {
+        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)
+                    || entity instanceof SnowGolem
+                    || entity instanceof IronGolem
+                    || entity instanceof Strider) {
             entity.save(nbt);
             entityType = entity.getType().getDescriptionId();
             displayName = entity.hasCustomName() && entity.getCustomName() != null
                     ? entity.getCustomName().getString()
                     : entity.getType().getDescription().getString();
+        } else if (entity instanceof Fox fox) {
+            fox.save(nbt);
+            boolean trustsPlayer = false;
+            ListTag trustedList = nbt.getList("Trusted", CompoundTag.TAG_INT_ARRAY);
+            for (Tag tag : trustedList) {
+                UUID uuid = NbtUtils.loadUUID(tag);
+                if (uuid.equals(player.getUUID())) {
+                    trustsPlayer = true;
+                    break;
+                }
+            }
+
+            if (!trustsPlayer) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
+            entityType = fox.getType().getDescriptionId();
+            displayName = fox.hasCustomName() && fox.getCustomName() != null
+                    ? fox.getCustomName().getString()
+                    : fox.getType().getDescription().getString();
+
         } else {
             return false;
         }
