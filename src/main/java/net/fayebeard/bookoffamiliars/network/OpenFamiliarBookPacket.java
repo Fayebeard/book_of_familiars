@@ -18,7 +18,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
         for (StoredFamiliar familiar : packet.familiars) {
             StoredFamiliar.CODEC.encodeStart(NbtOps.INSTANCE, familiar)
                     .result()
-                    .ifPresent(tag -> buf.writeNbt((CompoundTag) tag));
+                    .ifPresent(buf::writeNbt);
         }
     }
 
@@ -34,6 +34,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
         return new OpenFamiliarBookPacket(list);
     }
 
+    @SuppressWarnings("unused")
     public static void handle(OpenFamiliarBookPacket packet, CustomPayloadEvent.Context ctx) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
                 ClientPacketHandlers.handleOpenFamiliarBook(packet));

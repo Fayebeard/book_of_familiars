@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(Dist.CLIENT)
 public class RenameScreen extends Screen {
@@ -31,7 +32,7 @@ public class RenameScreen extends Screen {
     protected void init() {
         super.init();
 
-        renameField = new EditBox(this.font, this.width / 2 - 100, this.height / 2 - 10, 200, 10,
+        renameField = new EditBox(this.font, this.width / 2 - 100, this.height / 2 - 10, 200, 20,
                 Component.literal(""));
         renameField.setMaxLength(50);
         renameField.setValue(currentName);
@@ -50,33 +51,34 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers) {
-        if (pKeyCode == 257) {
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == 257) {
             confirmRename();
             return true;
         }
-        if (pKeyCode == 256) {
+        if (keyCode == 256) {
             Minecraft.getInstance().setScreen(parentScreen);
             return true;
         }
-        return super.keyPressed(pKeyCode, pScanCode, pModifiers);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        parentScreen.renderBackground(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        parentScreen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
-        pGuiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
-        pGuiGraphics.fill(this.width / 2 - 105, this.height / 2 - 30,
+        guiGraphics.fill(this.width / 2 - 105, this.height / 2 - 30,
                 this.width / 2 + 105, this.height / 2 + 40, 0xFF7a6a5a);
-        pGuiGraphics.fill(this.width / 2 - 104, this.height / 2 - 29,
+        guiGraphics.fill(this.width / 2 - 104, this.height / 2 - 29,
                 this.width / 2 + 104, this.height / 2 + 39, 0xFFf5f0e8);
 
-        pGuiGraphics.drawString(this.font, Component.translatable("bookoffamiliars.rename_familiar"),
+        guiGraphics.drawString(this.font, Component.translatable("bookoffamiliars.rename_familiar"),
                 this.width / 2 - this.font.width(Component.translatable("bookoffamiliars.rename_familiar")) / 2,
                 this.height / 2 - 22, 0x000000, false);
-        super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -85,10 +87,10 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    protected void renderBlurredBackground(float pPartialTick) {
+    protected void renderBlurredBackground(float partialTick) {
     }
 
     @Override
-    public void renderBackground(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
     }
 }
