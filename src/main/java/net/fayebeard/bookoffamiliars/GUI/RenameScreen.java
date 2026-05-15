@@ -36,7 +36,7 @@ public class RenameScreen extends Screen {
         renameField.setFocused(true);
         this.addRenderableWidget(renameField);
 
-        this.addRenderableWidget(Button.builder(Component.translatable("bookoffamiliars.confirm_button"), btn -> confirmRename())
+        this.addRenderableWidget(Button.builder(Component.translatable("bookoffamiliars.confirm_button"), _ -> confirmRename())
                 .bounds(this.width / 2 - 50, this.height / 2 + 15, 100, 20)
                 .build());
     }
