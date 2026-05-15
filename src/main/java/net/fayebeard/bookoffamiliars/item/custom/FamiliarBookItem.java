@@ -43,9 +43,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class FamiliarBookItem extends Item {
-
-    private static final String OWNER_TAG = "bookoffamiliars:owner";
-
     public FamiliarBookItem(Properties properties) {
         super(properties);
     }
@@ -118,7 +115,6 @@ public class FamiliarBookItem extends Item {
                     || entity instanceof IronGolem
                     || entity instanceof Strider) {
             entity.save(nbt);
-            if (!checkAndSetOwnership(player, nbt)) return false;
             entityType = entity.getType().getDescriptionId();
             displayName = entity.hasCustomName() && entity.getCustomName() != null
                     ? entity.getCustomName().getString()
@@ -209,18 +205,5 @@ public class FamiliarBookItem extends Item {
         );
 
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-    }
-
-    private boolean checkAndSetOwnership(Player player, CompoundTag nbt) {
-        if (nbt.contains(OWNER_TAG)) {
-            UUID ownerUUID = nbt.getUUID(OWNER_TAG);
-            if (!ownerUUID.equals(player.getUUID())) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
-                return false;
-            }
-        } else {
-            nbt.putUUID(OWNER_TAG, player.getUUID());
-        }
-        return true;
     }
 }
