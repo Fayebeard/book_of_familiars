@@ -20,6 +20,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -48,9 +49,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class FamiliarBookItem extends Item {
-
-    private static final String OWNER_TAG = "bookoffamiliars:owner";
-
     public FamiliarBookItem(Properties properties) {
         super(properties);
     }
@@ -95,7 +93,8 @@ public class FamiliarBookItem extends Item {
                     : tamableAnimal.getType().getDescription().getString();
 
         } else if (entity instanceof AbstractHorse horse) {
-            if (!horse.isTamed()) {
+            EntityReference<LivingEntity> ownerRef = horse.getOwnerReference();
+            if (!horse.isTamed() || (ownerRef != null && !ownerRef.getUUID().equals(player.getUUID()))) {
                 player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
                 return false;
             }
@@ -103,7 +102,6 @@ public class FamiliarBookItem extends Item {
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             horse.save(output);
             nbt = output.buildResult();
-            if (!checkAndSetOwnership(player, nbt)) return false;
             entityType = horse.getType().getDescriptionId();
             displayName = horse.hasCustomName() && horse.getCustomName() != null
                     ? horse.getCustomName().getString()
@@ -135,7 +133,6 @@ public class FamiliarBookItem extends Item {
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             entity.save(output);
             nbt = output.buildResult();
-            if (!checkAndSetOwnership(player, nbt)) return false;
             entityType = entity.getType().getDescriptionId();
             displayName = entity.hasCustomName() && entity.getCustomName() != null
                     ? entity.getCustomName().getString()
@@ -236,22 +233,5 @@ public class FamiliarBookItem extends Item {
     @Override
     public int getMaxStackSize(@NonNull ItemStack stack) {
         return 1;
-    }
-
-    private boolean checkAndSetOwnership(Player player, CompoundTag nbt) {
-        if (nbt.contains(OWNER_TAG)) {
-            try {
-                UUID ownerUUID = UUID.fromString(nbt.getString(OWNER_TAG).orElse(""));
-                if (!ownerUUID.equals(player.getUUID())) {
-                    player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
-                    return false;
-                }
-            } catch (IllegalArgumentException e) {
-                nbt.putString(OWNER_TAG, player.getUUID().toString());
-            }
-        } else {
-            nbt.putString(OWNER_TAG, player.getUUID().toString());
-        }
-        return true;
     }
 }
