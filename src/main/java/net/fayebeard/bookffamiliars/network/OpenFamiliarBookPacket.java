@@ -37,10 +37,8 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) {
 
     public static void handle(OpenFamiliarBookPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context ctx = contextSupplier.get();
-        ctx.enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
-                    ClientPacketHandlers.handleOpenFamiliarBook(packet));
-        });
+        ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                ClientPacketHandlers.handleOpenFamiliarBook(packet)));
         ctx.setPacketHandled(true);
     }
 }

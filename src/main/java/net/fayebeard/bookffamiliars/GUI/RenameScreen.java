@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 @OnlyIn(Dist.CLIENT)
 public class RenameScreen extends Screen {
@@ -30,7 +31,7 @@ public class RenameScreen extends Screen {
     protected void init() {
         super.init();
 
-        renameField = new EditBox(this.font, this.width / 2 - 100, this.height / 2 - 10, 200, 10,
+        renameField = new EditBox(this.font, this.width / 2 - 100, this.height / 2 - 10, 200, 20,
                 Component.literal(""));
         renameField.setMaxLength(50);
         renameField.setValue(currentName);
@@ -61,20 +62,20 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        parentScreen.renderBookBackground(pGuiGraphics);
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        parentScreen.renderBackground(guiGraphics);
 
-        pGuiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
+        guiGraphics.fill(0, 0, this.width, this.height, 0x80000000);
 
-        pGuiGraphics.fill(this.width / 2 - 105, this.height / 2 - 30,
+        guiGraphics.fill(this.width / 2 - 105, this.height / 2 - 30,
                 this.width / 2 + 105, this.height / 2 + 40, 0xFF7a6a5a);
-        pGuiGraphics.fill(this.width / 2 - 104, this.height / 2 - 29,
+        guiGraphics.fill(this.width / 2 - 104, this.height / 2 - 29,
                 this.width / 2 + 104, this.height / 2 + 39, 0xFFf5f0e8);
 
-        pGuiGraphics.drawString(this.font, Component.translatable("bookoffamiliars.rename_familiar"),
+        guiGraphics.drawString(this.font, Component.translatable("bookoffamiliars.rename_familiar"),
                 this.width / 2 - this.font.width(Component.translatable("bookoffamiliars.rename_familiar")) / 2,
                 this.height / 2 - 22, 0x000000, false);
-        super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -83,6 +84,6 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics pGuiGraphics) {
+    public void renderBackground(@NotNull GuiGraphics guiGraphics) {
     }
 }

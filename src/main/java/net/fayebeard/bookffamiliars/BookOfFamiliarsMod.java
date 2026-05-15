@@ -27,6 +27,7 @@ public class BookOfFamiliarsMod
     // Define mod id in a common place for everything to reference
     public static final String MOD_ID = "bookoffamiliars";
     // Directly reference a slf4j logger
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public BookOfFamiliarsMod() {
