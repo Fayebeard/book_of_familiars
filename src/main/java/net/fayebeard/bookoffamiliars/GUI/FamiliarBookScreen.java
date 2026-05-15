@@ -6,18 +6,21 @@ import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,17 +30,28 @@ public class FamiliarBookScreen extends Screen {
     private final List<StoredFamiliar> familiars = new ArrayList<>();
     private Entity currentClientEntity = null;
     private int currentPage = 0;
+    private String searchQuery = "";
+    private final List<StoredFamiliar> dropdownResults = new ArrayList<>();
+    private boolean showDropdown = false;
+    private int dropdownScrollOffset = 0;
+
+    private static final int MAX_DROPDOWN_ENTRIES = 4;
+    private static final int DROPDOWN_ENTRY_HEIGHT = 12;
 
     private static final Identifier BOOK_TEXTURE =
             Identifier.fromNamespaceAndPath("bookoffamiliars", "textures/gui/familiar_book.png");
 
-    private static final int BOOK_WIDTH = 192;
-    private static final int BOOK_HEIGHT = 192;
+    private static final int BOOK_WIDTH = 291;
+    private static final int BOOK_HEIGHT = 181;
+    private int bookX;
+    private int bookY;
+    private static int savedPage = 0;
 
-    private PageButton prevButton;
-    private PageButton nextButton;
+    private Button prevButton;
+    private Button nextButton;
     private Button releaseButton;
     private Button renameButton;
+    private EditBox searchField;
 
     public FamiliarBookScreen(List<StoredFamiliar> familiars) {
         super(Component.translatable("bookoffamiliars.familiar_book_screen"));
@@ -48,42 +62,71 @@ public class FamiliarBookScreen extends Screen {
     protected void init() {
         super.init();
 
-        int bookX = (this.width - BOOK_WIDTH) / 2;
-        int bookY = 2;
+        bookX = (this.width - BOOK_WIDTH) / 2;
+        bookY = (this.height - BOOK_HEIGHT) / 2;
+        currentPage = Math.clamp(savedPage, 0, Math.max(0, familiars.size() - 1));
 
-        prevButton = new PageButton(bookX + 67, bookY + 160, false, btn -> {
-            if (currentPage > 0) {
-                currentPage--;
-                if (currentClientEntity  != null) {
-                    currentClientEntity.discard();
-                    currentClientEntity = null;
+        prevButton = new TexturedButton(
+                bookX + 24, bookY + 148,
+                14, 14,
+                Component.empty(),
+                0,
+                BOOK_TEXTURE,
+                158, 198,
+                216,
+                14, 14,
+                512, 256,
+                _ -> {
+                    if (currentPage > 0) {
+                        currentPage--;
+                        if (Minecraft.getInstance().player != null) {
+                            Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
+                        }
+                        if (currentClientEntity != null) {
+                            currentClientEntity.discard();
+                            currentClientEntity = null;
+                        }
+                        updateButtonStates();
+                    }
                 }
-                updateButtonStates();
-            }
-        }, true);
+        );
 
-        nextButton = new PageButton(bookX + 94, bookY + 160, true, btn -> {
-            if (currentPage < familiars.size() - 1) {
-                currentPage++;
-                if (currentClientEntity != null) {
-                    currentClientEntity.discard();
-                    currentClientEntity = null;
+        nextButton = new TexturedButton(
+                bookX + 253, bookY + 148,
+                14, 14,
+                Component.empty(),
+                0,
+                BOOK_TEXTURE,
+                178, 198,
+                216,
+                14, 14,
+                512, 256,
+                _ -> {
+                    if (currentPage < familiars.size() - 1) {
+                        currentPage++;
+                        if (Minecraft.getInstance().player != null) {
+                            Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
+                        }
+                        if (currentClientEntity != null) {
+                            currentClientEntity.discard();
+                            currentClientEntity = null;
+                        }
+                    }
+                    updateButtonStates();
                 }
-                updateButtonStates();
-            }
-        }, true);
+        );
 
         releaseButton = new TexturedButton(
-                bookX + 40, bookY + 147,
-                53, 15,
+                bookX + 171, bookY + 131,
+                87, 14,
                 Component.translatable("bookoffamiliars.release_button"),
                 0,
                 BOOK_TEXTURE,
-                54, 191,
-                207,
-                53, 15,
-                256, 256,
-                btn -> {
+                307, 198,
+                216,
+                87, 14,
+                512, 256,
+                _ -> {
                     if (!familiars.isEmpty()) {
                         ClientPacketDistributor.sendToServer(new ReleaseFamiliarPacket(currentPage));
                     }
@@ -91,17 +134,18 @@ public class FamiliarBookScreen extends Screen {
         );
 
         renameButton = new TexturedButton(
-                bookX + 94, bookY + 147,
-                53, 15,
+                bookX + 171, bookY + 113,
+                87, 14,
                 Component.translatable("bookoffamiliars.rename_button"),
                 0,
                 BOOK_TEXTURE,
-                54, 191,
-                207,
-                53, 15,
-                256, 256,
-                btn -> {
+                208, 198,
+                216,
+                87, 14,
+                512, 256,
+                _ -> {
                     if (!familiars.isEmpty()) {
+                        savedPage = currentPage;
                         Minecraft.getInstance().setScreen(
                                 new RenameScreen(this, currentPage, familiars.get(currentPage).displayName())
                         );
@@ -109,6 +153,25 @@ public class FamiliarBookScreen extends Screen {
                 }
         );
 
+        searchField = new EditBox(this.font, bookX + 58, bookY + 149, 46, 10, Component.translatable("bookoffamiliars.search")) {
+            @Override
+            public void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+                super.extractWidgetRenderState(graphics, mouseX, mouseY, a);
+                if (getValue().isEmpty() && !isFocused()) {
+                    graphics.text(font, Component.translatable("bookoffamiliars.search")
+                            .withStyle(style -> style.withColor(0xFF8B6914)),
+                            getX() + 2, getY() + 1, 0xFF8B6914, false);
+                }
+            }
+        };
+        searchField.setBordered(false);
+        searchField.setMaxLength(30);
+        searchField.setResponder(text -> {
+            searchQuery = text;
+            updateDropdown();
+        });
+
+        this.addRenderableWidget(searchField);
         this.addRenderableWidget(prevButton);
         this.addRenderableWidget(nextButton);
         this.addRenderableWidget(releaseButton);
@@ -117,28 +180,56 @@ public class FamiliarBookScreen extends Screen {
         updateButtonStates();
     }
 
+    private void updateDropdown() {
+        dropdownResults.clear();
+        dropdownScrollOffset = 0;
+
+        if (searchQuery.isEmpty()) {
+            showDropdown = false;
+            return;
+        }
+
+        String query = searchQuery.toLowerCase();
+        for (StoredFamiliar familiar : familiars) {
+            if (familiar.displayName().toLowerCase().contains(query) ||
+                Component.translatable(familiar.entityType()).getString().toLowerCase().contains(query)) {
+                dropdownResults.add(familiar);
+            }
+        }
+        showDropdown = !dropdownResults.isEmpty();
+    }
+
     private void updateButtonStates() {
         prevButton.visible = currentPage > 0;
         nextButton.visible = currentPage < familiars.size() - 1;
         releaseButton.visible = !familiars.isEmpty();
         renameButton.visible = !familiars.isEmpty();
+        searchField.visible = !familiars.isEmpty();
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractRenderState(graphics, mouseX, mouseY, a);
 
-        int bookX = (this.width - BOOK_WIDTH) / 2;
-        int bookY = 2;
+        if (!familiars.isEmpty()) {
+            String pageText = (currentPage + 1) + "/" + familiars.size();
+            graphics.text(this.font,
+                    Component.literal(pageText),
+                    bookX + 247 - this.font.width(pageText), bookY + 152, 0xFF888888, false);
+        }
 
         graphics.text(this.font,
-                Component.translatable("bookoffamiliars.familiar_book_screen"),
-                bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.familiar_book_screen")) / 2, bookY + 10, 0xFF000000, false);
+                Component.translatable("bookoffamiliars.familiar_info"),
+                bookX + 77 - this.font.width(Component.translatable("bookoffamiliars.familiar_info")) / 2, bookY + 20, 0xFF4A2F6B, false);
+
+        graphics.text(this.font,
+                Component.translatable("bookoffamiliars.familiar_stats"),
+                bookX + 214 - this.font.width(Component.translatable("bookoffamiliars.familiar_stats")) / 2, bookY + 20, 0xFF4A2F6B, false);
 
         if (familiars.isEmpty()) {
             graphics.text(this.font,
                     Component.translatable("bookoffamiliars.no_familiars_stored"),
-                    bookX + 92 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + 70, 0xFF000000, false);
+                    bookX + 78 - this.font.width(Component.translatable("bookoffamiliars.no_familiars_stored")) / 2, bookY + 70, 0xFF000000, false);
         } else {
             StoredFamiliar familiar = familiars.get(currentPage);
 
@@ -152,8 +243,8 @@ public class FamiliarBookScreen extends Screen {
 
                 InventoryScreen.extractEntityInInventoryFollowsMouse(
                         graphics,
-                        bookX + 44, bookY + 41,
-                        bookX + 140, bookY + 105,
+                        bookX + 29, bookY + 38,
+                        bookX + 126, bookY + 105,
                         (int) scale,
                         0,
                         mouseX, mouseY,
@@ -162,7 +253,7 @@ public class FamiliarBookScreen extends Screen {
             }
 
             String displayName = familiar.displayName();
-            while (this.font.width(displayName) > 84 && displayName.length() > 0) {
+            while (this.font.width(displayName) > 84 && !displayName.isEmpty()) {
                 displayName = displayName.substring(0, displayName.length() - 1);
             }
             if (displayName.length() < familiar.displayName().length()) {
@@ -170,11 +261,11 @@ public class FamiliarBookScreen extends Screen {
             }
             graphics.text(this.font,
                     Component.literal(displayName),
-                    bookX + 92 - this.font.width(displayName) / 2, bookY + 118, 0xFF000000, false);
+                    bookX + 78 - this.font.width(displayName) / 2, bookY + 117, 0xFF000000, false);
 
 
             String entityType = Component.translatable(familiar.entityType()).getString();
-            while (this.font.width(entityType) > 60 && entityType.length() > 0) {
+            while (this.font.width(entityType) > 60 && !entityType.isEmpty()) {
                 entityType = entityType.substring(0, entityType.length() - 1);
             }
             if (entityType.length() < Component.translatable(familiar.entityType()).getString().length()) {
@@ -182,28 +273,167 @@ public class FamiliarBookScreen extends Screen {
             }
             graphics.text(this.font,
                     Component.literal(entityType),
-                    bookX + 93 - this.font.width(entityType) / 2, bookY + 134, 0xFF444444, false);
+                    bookX + 77 - this.font.width(entityType) / 2, bookY + 133, 0xFF444444, false);
 
-            Component pageMsg = Component.translatable("book.pageIndicator", currentPage + 1, familiars.size());
-            int pageMsgWidth = this.font.width(pageMsg);
-            graphics.text(this.font, pageMsg, bookX + 192 - 44 - pageMsgWidth, bookY + 18, 0xFF000000, false);
+            if (familiar.maxHealth() == 0f) {
+                String[] lines = Component.translatable("bookoffamiliars.stats_outdated").getString().split("\n");
+                for (int i = 0; i < lines.length; i++) {
+                    graphics.text(this.font,
+                            Component.literal(lines[i]),
+                            bookX + 194, bookY + 47 + (i * 12), 0xFF888888, false);
+                }
+            } else {
+
+                graphics.text(this.font,
+                        Component.literal(String.format("%.1f/%.1f", familiar.currentHealth(), familiar.maxHealth())),
+                        bookX + 194, bookY + 47, 0xFF000000, false);
+
+                graphics.text(this.font,
+                        Component.literal(String.format("%.2f", familiar.speed())),
+                        bookX + 194, bookY + 71, 0xFF000000, false);
+
+                if (familiar.hasAttackDamage()) {
+                    graphics.text(this.font,
+                            Component.literal(String.format("%.1f", familiar.attackDamage())),
+                            bookX + 194, bookY + 59, 0xFF000000, false);
+                } else {
+                    graphics.text(this.font,
+                            Component.literal("N/A"),
+                            bookX + 194, bookY + 59, 0xFF000000, false);
+                }
+
+                if (familiar.itemCount() >= 0) {
+                    graphics.text(this.font,
+                            Component.literal(String.valueOf(familiar.itemCount())),
+                            bookX + 194, bookY + 83, 0xFF000000, false);
+                } else {
+                    graphics.text(this.font,
+                            Component.literal("N/A"),
+                            bookX + 194, bookY + 83, 0xFF000000, false);
+                }
+            }
+        }
+
+        if (showDropdown) {
+            renderDropDown(graphics, mouseX, mouseY);
+        }
+    }
+
+    private void renderDropDown(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
+        int dropX = bookX + 58;
+        int dropY = bookY + 160;
+        int dropW = 100;
+        int visibleCount = Math.min(dropdownResults.size(), MAX_DROPDOWN_ENTRIES);
+        int dropH = visibleCount * DROPDOWN_ENTRY_HEIGHT + 4;
+
+        guiGraphics.fill(dropX - 1, dropY - 1, dropX + dropW + 1, dropY + dropH + 1, 0xFF888888);
+        guiGraphics.fill(dropX, dropY, dropX + dropW, dropY + dropH, 0xFFf5f0e8);
+
+        if (dropdownScrollOffset > 0) {
+            guiGraphics.text(this.font, Component.literal("▲"),
+                    dropX + dropW - 10, dropY + 2, 0xFF888888, false);
+        }
+        if (dropdownScrollOffset + MAX_DROPDOWN_ENTRIES < dropdownResults.size()) {
+            guiGraphics.text(this.font, Component.literal("▼"),
+                    dropX + dropW - 10, dropY + dropH - 10, 0xFF888888, false);
+        }
+
+        for (int i = 0; i < visibleCount; i++) {
+            int resultIndex = i + dropdownScrollOffset;
+            int entryY = dropY + 2 + i * DROPDOWN_ENTRY_HEIGHT;
+            boolean hovered = mouseX >= dropX && mouseX <= dropX + dropW
+                    && mouseY >= entryY && mouseY < entryY + DROPDOWN_ENTRY_HEIGHT;
+
+            if (hovered) {
+                guiGraphics.fill(dropX, entryY, dropX + dropW, entryY + DROPDOWN_ENTRY_HEIGHT, 0xFFd4c8b0);
+            }
+
+            String name = dropdownResults.get(resultIndex).displayName();
+            while (this.font.width(name) > dropW - 4 && !name.isEmpty())
+                name = name.substring(0, name.length() - 1);
+            if (name.length() < dropdownResults.get(resultIndex).displayName().length()) name += "...";
+
+            guiGraphics.text(this.font, Component.literal(name),
+                    dropX + 2, entryY + 2, 0xFF000000, false);
         }
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        if (showDropdown) {
+            int maxScroll = Math.max(0, dropdownResults.size() - MAX_DROPDOWN_ENTRIES);
+            dropdownScrollOffset -= (int) Math.signum(scrollY);
+            dropdownScrollOffset = Math.clamp(dropdownScrollOffset, 0, maxScroll);
+            return true;
+        }
+        return super.mouseScrolled(x, y, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
+        if (showDropdown && button == 0) {
+            int dropX = bookX + 58;
+            int dropY = bookY + 160;
+            int dropW = 100;
+            int visibleCount = Math.min(dropdownResults.size(), MAX_DROPDOWN_ENTRIES);
+
+            for (int i = 0; i < visibleCount; i++) {
+                int resultIndex = i + dropdownScrollOffset;
+                int entryY = dropY + 2 + i * DROPDOWN_ENTRY_HEIGHT;
+                if (mouseX >= dropX && mouseX <= dropX + dropW
+                        && mouseY >= entryY && mouseY < entryY + DROPDOWN_ENTRY_HEIGHT) {
+                    int targetPage = familiars.indexOf(dropdownResults.get(resultIndex));
+                    if (targetPage >= 0) {
+                        currentPage = targetPage;
+                        if (currentClientEntity != null) { currentClientEntity.discard(); currentClientEntity = null; }
+                        updateButtonStates();
+                    }
+                    searchField.setValue("");
+                    searchQuery = "";
+                    showDropdown = false;
+                    dropdownResults.clear();
+                    dropdownScrollOffset = 0;
+                    return true;
+                }
+            }
+            showDropdown = false;
+            dropdownResults.clear();
+            return false;
+        }
+
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         this.extractTransparentBackground(graphics);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, (this.width - BOOK_WIDTH) / 2, 2, 0.0F, 0.0F, BOOK_WIDTH, BOOK_HEIGHT - 1, 256, 256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, bookX, bookY, 128, 2, BOOK_WIDTH, BOOK_HEIGHT, 512, 256);
     }
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (super.keyPressed(event)) return true;
-        switch (event.key()) {
-            case 266: prevButton.onPress(event); return true;
-            case 267: nextButton.onPress(event); return true;
-            default: return false;
+        if (event.key() == 256 && showDropdown) {
+            showDropdown = false;
+            dropdownResults.clear();
+            dropdownScrollOffset = 0;
+            return true;
         }
+
+        if (super.keyPressed(event)) return true;
+        return switch (event.key()) {
+            case 266 -> {
+                prevButton.onPress(event);
+                yield true;
+            }
+            case 267 -> {
+                nextButton.onPress(event);
+                yield true;
+            }
+            default -> false;
+        };
     }
 
     @Override
@@ -213,17 +443,20 @@ public class FamiliarBookScreen extends Screen {
 
     @Override
     public void onClose() {
+        savedPage = currentPage;
         if (currentClientEntity != null) {
             currentClientEntity.discard();
             currentClientEntity = null;
         }
 
-        Minecraft.getInstance().player.playSound(ModSounds.FAMILIAR_BOOK_CLOSE.get(), 0.25f, 1.0f);
+        if (Minecraft.getInstance().player != null) {
+            Minecraft.getInstance().player.playSound(ModSounds.FAMILIAR_BOOK_CLOSE.get(), 0.25f, 1.0f);
+        }
         super.onClose();
     }
 
     @Override
-    protected void extractBlurredBackground(GuiGraphicsExtractor graphics) {
+    protected void extractBlurredBackground(@NonNull GuiGraphicsExtractor graphics) {
     }
 
     public void refresh(List<StoredFamiliar> updatedFamiliars) {
@@ -235,16 +468,18 @@ public class FamiliarBookScreen extends Screen {
         this.familiars.clear();
         this.familiars.addAll(updatedFamiliars);
 
-        if (currentPage >= familiars.size() && currentPage > 0) {
-            currentPage = familiars.size() - 1;
-        }
-
+        currentPage = Math.clamp(currentPage, 0, Math.max(0, familiars.size() - 1));
+        savedPage = currentPage;
+        showDropdown = false;
+        dropdownResults.clear();
+        dropdownScrollOffset = 0;
         updateButtonStates();
     }
 
     private Entity getCurrentClientEntity() {
         if (currentPage < 0 || currentPage >= familiars.size()) return null;
         if (currentClientEntity != null) currentClientEntity.discard();
+        if (Minecraft.getInstance().level == null) return null;
         currentClientEntity = EntityType.loadEntityRecursive(
                 familiars.get(currentPage).nbt(),
                 Minecraft.getInstance().level,
