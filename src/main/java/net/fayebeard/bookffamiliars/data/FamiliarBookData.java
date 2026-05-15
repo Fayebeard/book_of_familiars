@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FamiliarBookData {
@@ -27,7 +28,7 @@ public class FamiliarBookData {
     }
 
     public List<StoredFamiliar> getFamiliars() {
-        return familiars;
+        return Collections.unmodifiableList(familiars);
     }
 
     public void addFamiliar(StoredFamiliar familiar) {
@@ -53,8 +54,8 @@ public class FamiliarBookData {
     public void deserializeNBT(CompoundTag nbt) {
         familiars.clear();
         ListTag list = nbt.getList("Familiars", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, list.get(i))
+        for (Tag tag : list) {
+            StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, tag)
                     .result()
                     .ifPresent(familiars::add);
         }
@@ -70,7 +71,8 @@ public class FamiliarBookData {
                 nbt.putString("CustomName", Component.Serializer.toJson(
                         Component.literal(newName)));
             }
-            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName,
+                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount()));
         }
     }
 }
