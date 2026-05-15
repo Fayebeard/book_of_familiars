@@ -79,6 +79,7 @@ public class FamiliarBookScreen extends Screen {
                 _ -> {
                     if (currentPage > 0) {
                         currentPage--;
+                        savedPage = currentPage;
                         if (Minecraft.getInstance().player != null) {
                             Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
                         }
@@ -104,6 +105,7 @@ public class FamiliarBookScreen extends Screen {
                 _ -> {
                     if (currentPage < familiars.size() - 1) {
                         currentPage++;
+                        savedPage = currentPage;
                         if (Minecraft.getInstance().player != null) {
                             Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
                         }
