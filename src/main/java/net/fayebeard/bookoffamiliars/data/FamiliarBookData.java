@@ -8,9 +8,11 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.util.INBTSerializable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnknownNullability;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FamiliarBookData implements INBTSerializable<CompoundTag> {
@@ -18,7 +20,7 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
     private final List<StoredFamiliar> familiars = new ArrayList<>();
 
     public List<StoredFamiliar> getFamiliars() {
-        return familiars;
+        return Collections.unmodifiableList(familiars);
     }
 
     public void addFamiliar(StoredFamiliar familiar) {
@@ -49,12 +51,13 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
                 nbt.putString("CustomName", Component.Serializer.toJson(
                         Component.literal(newName), registryAccess));
             }
-            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName,
+                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount()));
         }
     }
 
     @Override
-    public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+    public @UnknownNullability CompoundTag serializeNBT(HolderLookup.@NotNull Provider provider) {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
         for (StoredFamiliar f : familiars) {
@@ -66,11 +69,11 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag compoundTag) {
+    public void deserializeNBT(HolderLookup.@NotNull Provider provider, CompoundTag compoundTag) {
         familiars.clear();
         ListTag list = compoundTag.getList("Familiars", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, list.get(i))
+        for (Tag tag : list) {
+            StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, tag)
                     .ifSuccess(familiars::add);
         }
     }

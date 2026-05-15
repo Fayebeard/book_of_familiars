@@ -7,7 +7,11 @@ import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,16 +19,23 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.SnowGolem;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,14 +47,14 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public boolean onLeftClickEntity(ItemStack stack, Player player, Entity entity) {
+    public boolean onLeftClickEntity(@NotNull ItemStack stack, Player player, @NotNull Entity entity) {
         Level level = player.level();
 
         if (level.isClientSide()) return true;
 
-        String entityId = entity.getType().builtInRegistryHolder().key().location().toString();
+        String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+            player.sendSystemMessage(Component.translatable("bookoffamiliars.cannot_be_stored"));
             return false;
         }
 
@@ -65,9 +76,8 @@ public class FamiliarBookItem extends Item {
             }
 
             tamableAnimal.save(nbt);
-
-            entityType = tamableAnimal.getType().toShortString();
-            displayName = tamableAnimal.hasCustomName()
+            entityType = tamableAnimal.getType().getDescriptionId();
+            displayName = tamableAnimal.hasCustomName() && tamableAnimal.getCustomName() != null
                     ? tamableAnimal.getCustomName().getString()
                     : tamableAnimal.getType().getDescription().getString();
 
@@ -79,8 +89,8 @@ public class FamiliarBookItem extends Item {
             }
 
             horse.save(nbt);
-            entityType = horse.getType().toShortString();
-            displayName = horse.hasCustomName()
+            entityType = horse.getType().getDescriptionId();
+            displayName = horse.hasCustomName() && horse.getCustomName() != null
                     ? horse.getCustomName().getString()
                     : horse.getType().getDescription().getString();
 
@@ -95,21 +105,67 @@ public class FamiliarBookItem extends Item {
 
             allay.save(nbt);
             entityType = allay.getType().getDescriptionId();
-            displayName = allay.hasCustomName()
+            displayName = allay.hasCustomName() && allay.getCustomName() != null
                     ? allay.getCustomName().getString()
                     : allay.getType().getDescription().getString();
 
-        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)) {
+        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)
+                    || entity instanceof SnowGolem
+                    || entity instanceof IronGolem
+                    || entity instanceof Strider) {
             entity.save(nbt);
             entityType = entity.getType().getDescriptionId();
-            displayName = entity.hasCustomName()
+            displayName = entity.hasCustomName() && entity.getCustomName() != null
                     ? entity.getCustomName().getString()
                     : entity.getType().getDescription().getString();
+
+        } else if (entity instanceof Fox fox) {
+            fox.save(nbt);
+            boolean trustsPlayer = false;
+            ListTag trustedList = nbt.getList("Trusted", CompoundTag.TAG_INT_ARRAY);
+            for (Tag tag : trustedList) {
+                UUID uuid = NbtUtils.loadUUID(tag);
+                if (uuid.equals(player.getUUID())) {
+                    trustsPlayer = true;
+                    break;
+                }
+            }
+
+            if (!trustsPlayer) {
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                return false;
+            }
+
+            entityType = fox.getType().getDescriptionId();
+            displayName = fox.hasCustomName() && fox.getCustomName() != null
+                ? fox.getCustomName().getString()
+                : fox.getType().getDescription().getString();
+
         } else {
             return false;
         }
 
-        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName);
+        float currentHealth = 0f;
+        float maxHealth = 0f;
+        float speed = 0f;
+        float attackDamage = 0f;
+        boolean hasAttackDamage = false;
+        int itemCount = -1;
+
+        if (entity instanceof LivingEntity livingEntity) {
+            currentHealth = livingEntity.getHealth();
+            maxHealth = livingEntity.getMaxHealth();
+            speed = (float) livingEntity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+            if (nbt.contains("Items")) {
+                itemCount =  nbt.getList("Items", 10).size();
+            }
+            if (livingEntity.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+                attackDamage = (float) livingEntity.getAttributeValue(Attributes.ATTACK_DAMAGE);
+                hasAttackDamage = true;
+            }
+        }
+
+        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName, currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount);
         player.getData(ModAttachments.FAMILIAR_DATA).addFamiliar(familiar);
         ServerLevel serverLevel = (ServerLevel) level;
         serverLevel.sendParticles(ParticleTypes.POOF,
@@ -126,7 +182,7 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level level, @NotNull Player player, @NotNull InteractionHand usedHand) {
         if (!level.isClientSide()) {
             ServerPlayer serverPlayer = (ServerPlayer) player;
             List<StoredFamiliar> familiars = serverPlayer.getData(ModAttachments.FAMILIAR_DATA).getFamiliars();
@@ -137,7 +193,7 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         tooltipComponents.add(
                 Component.translatable("bookoffamiliars.tooltip")
                         .withStyle(style -> style.withColor(0x7a6a5a))
@@ -147,7 +203,7 @@ public class FamiliarBookItem extends Item {
     }
 
     @Override
-    public int getMaxStackSize(ItemStack stack) {
+    public int getMaxStackSize(@NotNull ItemStack stack) {
         return 1;
     }
 }
