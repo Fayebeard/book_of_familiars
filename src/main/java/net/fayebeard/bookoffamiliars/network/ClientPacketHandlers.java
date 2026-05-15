@@ -11,7 +11,10 @@ public class ClientPacketHandlers {
             existingScreen.refresh(packet.familiars());
         } else {
             mc.setScreen(new FamiliarBookScreen(packet.familiars()));
-            mc.player.playSound(ModSounds.FAMILIAR_BOOK_OPEN.get(), 0.25f, 1.0f);
+            if (mc.player != null) {
+                mc.player.playSound(ModSounds.FAMILIAR_BOOK_OPEN.get(), 0.25f, 1.0f);
+            }
+
         }
     }
 }

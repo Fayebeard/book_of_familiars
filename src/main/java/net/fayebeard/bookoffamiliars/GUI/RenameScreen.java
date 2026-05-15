@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import org.jspecify.annotations.NonNull;
 
 public class RenameScreen extends Screen {
 
@@ -59,7 +60,7 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         parentScreen.extractBackground(graphics, mouseX, mouseY, a);
 
         graphics.fill(0, 0, this.width, this.height, 0x80000000);
@@ -82,10 +83,10 @@ public class RenameScreen extends Screen {
     }
 
     @Override
-    protected void extractBlurredBackground(GuiGraphicsExtractor graphics) {
+    protected void extractBlurredBackground(@NonNull GuiGraphicsExtractor graphics) {
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void extractBackground(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
     }
 }

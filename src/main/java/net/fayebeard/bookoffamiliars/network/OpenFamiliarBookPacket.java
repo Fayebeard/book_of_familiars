@@ -8,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
     public static final StreamCodec<ByteBuf, OpenFamiliarBookPacket> STREAM_CODEC =
             new StreamCodec<>() {
                 @Override
-                public OpenFamiliarBookPacket decode(ByteBuf input) {
+                public @NonNull OpenFamiliarBookPacket decode(ByteBuf input) {
                     int size = input.readInt();
                     List<StoredFamiliar> list = new ArrayList<>();
                     for (int i = 0; i < size; i++) {
@@ -38,7 +39,7 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements 
             };
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

@@ -14,11 +14,13 @@ public class Config {
             .translation("bookoffamiliars.configuration.maxFamiliars")
             .defineInRange("maxFamiliars", 10, 1, 100);
 
+    @SuppressWarnings("deprecation")
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ENTITY_BLACKLIST = BUILDER
             .comment("List of entity types that cannot be stored. Format: [\"minecraft:wolf\", \"minecraft:cat\"]")
             .translation("bookoffamiliars.configuration.entityBlacklist")
             .defineListAllowEmpty("entityBlacklist", List.of(), entry -> entry instanceof String);
 
+    @SuppressWarnings("deprecation")
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ENTITY_WHITELIST = BUILDER
             .comment("List of additional entity types that can be stored beyond the default tamed entities.",
                     "Format: [\"minecraft:cow\", \"minecraft:sheep\"]")

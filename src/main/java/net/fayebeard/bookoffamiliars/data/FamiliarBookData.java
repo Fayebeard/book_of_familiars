@@ -6,6 +6,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FamiliarBookData {
@@ -24,7 +25,7 @@ public class FamiliarBookData {
             ).fieldOf("familiars");
 
     public List<StoredFamiliar> getFamiliars() {
-        return familiars;
+        return Collections.unmodifiableList(familiars);
     }
 
     public void addFamiliar(StoredFamiliar familiar) {
@@ -45,6 +46,7 @@ public class FamiliarBookData {
         return copy;
     }
 
+    @SuppressWarnings("unused")
     public void renameFamiliar(int index, String newName, HolderLookup.Provider registryAccess) {
         if (index >= 0 && index < familiars.size()) {
             StoredFamiliar old = familiars.get(index);
@@ -54,7 +56,8 @@ public class FamiliarBookData {
             } else {
                 nbt.putString("CustomName", newName);
             }
-            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName));
+            familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName,
+                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount()));
         }
     }
 }
