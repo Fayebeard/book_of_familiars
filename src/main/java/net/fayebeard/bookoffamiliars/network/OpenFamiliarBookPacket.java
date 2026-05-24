@@ -1,6 +1,7 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
+import net.fayebeard.bookoffamiliars.data.RecoveringFamiliar;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -12,30 +13,21 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars) implements CustomPacketPayload {
+public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars, List<RecoveringFamiliar> recovering, long currentGameTime) implements CustomPacketPayload {
+
     public static final Type<OpenFamiliarBookPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath("bookoffamiliars", "open_familiar_book"));
 
     public static final StreamCodec<ByteBuf, OpenFamiliarBookPacket> STREAM_CODEC =
-            new StreamCodec<>() {
-                @Override
-                public @NotNull OpenFamiliarBookPacket decode(ByteBuf byteBuf) {
-                    int size = byteBuf.readInt();
-                    List<StoredFamiliar> list = new ArrayList<>();
-                    for (int i = 0; i < size; i++) {
-                        list.add(ByteBufCodecs.fromCodec(StoredFamiliar.CODEC).decode(byteBuf));
-                    }
-                    return new OpenFamiliarBookPacket(list);
-                }
-
-                @Override
-                public void encode(ByteBuf o, OpenFamiliarBookPacket packet) {
-                    o.writeInt(packet.familiars().size());
-                    for (StoredFamiliar familiar : packet.familiars()) {
-                        ByteBufCodecs.fromCodec(StoredFamiliar.CODEC).encode(o, familiar);
-                    }
-                }
-            };
+            StreamCodec.composite(
+                    ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.fromCodec(StoredFamiliar.CODEC)),
+                    OpenFamiliarBookPacket::familiars,
+                    ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.fromCodec(RecoveringFamiliar.CODEC)),
+                    OpenFamiliarBookPacket::recovering,
+                    ByteBufCodecs.VAR_LONG,
+                    OpenFamiliarBookPacket::currentGameTime,
+                    OpenFamiliarBookPacket::new
+            );
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {

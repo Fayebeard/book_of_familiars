@@ -3,7 +3,6 @@ package net.fayebeard.bookoffamiliars.network;
 import io.netty.buffer.ByteBuf;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
-import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -15,7 +14,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-public record RenameFamiliarPacket(int index, String name) implements CustomPacketPayload {
+public record RenameFamiliarPacket(int index, String name, boolean isRecovering) implements CustomPacketPayload {
 
     public static final Type<RenameFamiliarPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath("bookoffamiliars", "rename_familiar"));
@@ -26,6 +25,8 @@ public record RenameFamiliarPacket(int index, String name) implements CustomPack
                     RenameFamiliarPacket::index,
                     ByteBufCodecs.STRING_UTF8,
                     RenameFamiliarPacket::name,
+                    ByteBufCodecs.BOOL,
+                    RenameFamiliarPacket::isRecovering,
                     RenameFamiliarPacket::new
             );
 
@@ -43,18 +44,25 @@ public record RenameFamiliarPacket(int index, String name) implements CustomPack
             if (!holdingBook) return;
 
             FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
-            int index = packet.index();
-            if (index < 0 || index >= data.getFamiliars().size()) return;
             String name = packet.name().trim();
+            int index = packet.index();
             if (name.length() > 50) name = name.substring(0, 50);
-            if (name.isEmpty()) {
-                StoredFamiliar familiar = data.getFamiliars().get(index);
-                name = Component.translatable(familiar.entityType()).getString();
+
+            if (packet.isRecovering()) {
+                if (index < 0 || index >= data.getRecovering().size()) return;
+                if (name.isEmpty()) {
+                    name = Component.translatable(data.getRecovering().get(index).entityType()).getString();
+                }
+                data.renameRecovering(index, name, player.registryAccess());
+            } else {
+                if (index < 0 || index >= data.getFamiliars().size()) return;
+                if (name.isEmpty()) {
+                    name = Component.translatable(data.getFamiliars().get(index).entityType()).getString();
+                }
+                data.renameFamiliar(index, name, player.registryAccess());
             }
-
-            data.renameFamiliar(index, name, player.registryAccess());
-
-            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars()));
+            long currentGameTime = player.serverLevel().getGameTime();
+            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime));
         });
     }
 }
