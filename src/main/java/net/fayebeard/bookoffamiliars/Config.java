@@ -27,6 +27,21 @@ public class Config {
             .translation("bookoffamiliars.configuration.entityWhitelist")
             .defineListAllowEmpty("entityWhitelist", List.of(), entry -> entry instanceof String);
 
+    public static final ModConfigSpec.IntValue RESURRECTION_COOLDOWN_MINUTES = BUILDER
+            .comment("Cooldown in minutes before a released familiar returns to the book after death")
+            .translation("bookoffamiliars.configuration.resurrectionCooldownMinutes")
+            .defineInRange("resurrectionCooldownMinutes", 20, 0, 1440);
+
+    public static final ModConfigSpec.IntValue RESURRECTION_XP_COST = BUILDER
+            .comment("Experience levels required to skip the resurrection cooldown.")
+            .translation("bookoffamiliars.configuration.resurrectionXpCost")
+            .defineInRange("resurrectionXpCost", 5, 0, 100);
+
+    public static final ModConfigSpec.BooleanValue REMOVE_INVALID_FAMILIARS = BUILDER
+            .comment("Automatically remove familiars from the book if their mod is no longer installed.")
+            .translation("bookoffamiliars.configuration.removeInvalidFamiliars")
+            .define("removeInvalidFamiliars", true);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
 }

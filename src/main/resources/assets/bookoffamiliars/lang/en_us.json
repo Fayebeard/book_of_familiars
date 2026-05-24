@@ -8,6 +8,14 @@
   "bookoffamiliars.configuration.entityWhitelist": "Entity Whitelist",
   "bookoffamiliars.configuration.entityWhitelist.tooltip": "List of additional entity types that can be stored beyond the default tamed entities. Format: [\"minecraft:cow\", \"minecraft:sheep\"]",
 
+  "bookoffamiliars.configuation.resurrectionCooldownMinutes": "Resurrection Cooldown (minutes)",
+  "bookoffamiliars.configuation.resurrectionCooldownMinutes.tooltip": "Cooldown in minutes before a released familiar returns to the book after death",
+
+  "bookoffamiliars.configuration.resurrectionXpCost": "Resurrection XP Cost (levels)",
+  "bookoffamiliars.configuration.resurrectionXpCost.tooltip": "Experience levels required to skip the resurrection cooldown.",
+
+  "bookoffamiliars.configuration.removeInvalidFamiliars": "Remove Invalid Familiars",
+  "bookoffamiliars.configuration.removeInvalidFamiliars.tooltip": "Automatically remove familiars from the book if their mod is no longer installed.",
 
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
@@ -33,5 +41,17 @@
   "bookoffamiliars.search": "Search...",
   "bookoffamiliars.familiar_stats": "Familiar Stats",
   "bookoffamiliars.cannot_be_stored": "This entity cannot be stored",
-  "bookoffamiliars.stats_outdated": "Release &\nRe-store\nFor\nStats"
+  "bookoffamiliars.stats_outdated": "Release &\nRe-store\nFor\nStats",
+  "bookoffamiliars.familiar_recovering": "%s has died and is recovering...",
+  "bookoffamiliars.familiar_returned": "%d familiar(s) returned to your book!",
+  "bookoffamiliars.familiar_revived": "%s has been revived!",
+  "bookoffamiliars.not_enough_xp": "You need %d experience levels to revive this familiar.",
+  "bookoffamiliars.recovering_in": "Recovering: %s",
+  "bookoffamiliars.skip_cooldown": "Skip(%d lvls)",
+  "bookoffamiliars.delete_button": "Delete",
+  "bookoffamiliars.delete_confirm_line1": "Are you sure?",
+  "bookoffamiliars.delete_confirm_line2": "This will permanently delete %s from the world.",
+  "bookoffamiliars.familiar_recovering_full": "%s has died but your book is full. They will be added when space is available.",
+  "bookoffamiliars.familiar_removed_missing_mod": "%s was removed from your book because their mod is no longer installed.",
+  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book."
 }

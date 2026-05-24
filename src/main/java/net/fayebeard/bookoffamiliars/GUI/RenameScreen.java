@@ -15,13 +15,15 @@ public class RenameScreen extends Screen {
 
     private final FamiliarBookScreen parentScreen;
     private final int familiarIndex;
+    private final boolean isRecovering;
     private final String currentName;
     private EditBox renameField;
 
-    public RenameScreen(FamiliarBookScreen parentScreen, int familiarIndex, String currentName) {
+    public RenameScreen(FamiliarBookScreen parentScreen, int familiarIndex, boolean isRecovering, String currentName) {
         super(Component.literal(""));
         this.parentScreen = parentScreen;
         this.familiarIndex = familiarIndex;
+        this.isRecovering = isRecovering;
         this.currentName = currentName;
     }
 
@@ -42,7 +44,7 @@ public class RenameScreen extends Screen {
     }
 
     private void confirmRename() {
-        ClientPacketDistributor.sendToServer(new RenameFamiliarPacket(familiarIndex, renameField.getValue()));
+        ClientPacketDistributor.sendToServer(new RenameFamiliarPacket(familiarIndex, renameField.getValue(), isRecovering));
         Minecraft.getInstance().setScreen(parentScreen);
     }
 

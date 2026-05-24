@@ -43,7 +43,6 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -61,15 +60,15 @@ public class FamiliarBookItem extends Item {
 
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.cannot_be_stored"));
+            player.sendSystemMessage(Component.translatable("bookoffamiliars.cannot_be_stored").withStyle(style -> style.withColor(0xFFFF5555)));
             return false;
         }
 
         FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
+        int currentTotal = data.getFamiliars().size() + data.getRecovering().size();
         int max = Config.MAX_FAMILIARS.get();
-        if (data.getFamiliars().size() >= max) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.book_full",
-                    Component.literal(String.valueOf(max))));
+        if (currentTotal >= max) {
+            player.sendSystemMessage(Component.translatable("bookoffamiliars.book_full", max).withStyle(style -> style.withColor(0xFFFF5555)));
             return true;
         }
 
@@ -79,7 +78,7 @@ public class FamiliarBookItem extends Item {
 
         if (entity instanceof TamableAnimal tamableAnimal) {
             if (!tamableAnimal.isTame() || !tamableAnimal.isOwnedBy(player)) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFFFF5555)));
                 return false;
             }
 
@@ -95,7 +94,7 @@ public class FamiliarBookItem extends Item {
         } else if (entity instanceof AbstractHorse horse) {
             EntityReference<LivingEntity> ownerRef = horse.getOwnerReference();
             if (!horse.isTamed() || (ownerRef != null && !ownerRef.getUUID().equals(player.getUUID()))) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFFFF5555)));
                 return false;
             }
 
@@ -112,7 +111,7 @@ public class FamiliarBookItem extends Item {
             Optional<UUID> likedPlayer = allay.getBrain()
                     .getMemory(MemoryModuleType.LIKED_PLAYER);
             if (likedPlayer.isEmpty() || !likedPlayer.get().equals(player.getUUID())) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFFFF5555)));
                 return false;
             }
 
@@ -159,7 +158,7 @@ public class FamiliarBookItem extends Item {
             }
 
             if (!trustsPlayer) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar"));
+                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFFFF5555)));
                 return false;
             }
 
@@ -201,8 +200,7 @@ public class FamiliarBookItem extends Item {
 
         if (player instanceof ServerPlayer serverPlayer) {
             ModUtils.playSound(serverPlayer, ModSounds.FAMILIAR_STORE.get());
-            serverPlayer.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_stored",
-                    Component.literal(displayName)));
+            serverPlayer.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_stored", Component.literal(displayName)).withStyle(style -> style.withColor(0xFF55FF55)));
         }
 
         return true;
@@ -212,9 +210,9 @@ public class FamiliarBookItem extends Item {
     public @NonNull InteractionResult use(Level level, @NonNull Player player, @NonNull InteractionHand hand) {
         if (!level.isClientSide()) {
             ServerPlayer serverPlayer = (ServerPlayer) player;
-            List<StoredFamiliar> familiars = serverPlayer.getData(ModAttachments.FAMILIAR_DATA).getFamiliars();
-            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(familiars));
-
+            FamiliarBookData data = serverPlayer.getData(ModAttachments.FAMILIAR_DATA);
+            long currentGameTime = serverPlayer.level().getGameTime();
+            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime));
         }
         return InteractionResult.SUCCESS;
     }
