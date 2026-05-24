@@ -39,5 +39,19 @@ public class ModNetwork {
                 RenameFamiliarPacket::decode,
                 RenameFamiliarPacket::handle
         );
+
+        CHANNEL.registerMessage(id++,
+                DeleteFamiliarPacket.class,
+                DeleteFamiliarPacket::encode,
+                DeleteFamiliarPacket::decode,
+                DeleteFamiliarPacket::handle
+        );
+
+        CHANNEL.registerMessage(id++,
+                SkipRecoveryCooldownPacket.class,
+                SkipRecoveryCooldownPacket::encode,
+                SkipRecoveryCooldownPacket::decode,
+                SkipRecoveryCooldownPacket::handle
+        );
     }
 }

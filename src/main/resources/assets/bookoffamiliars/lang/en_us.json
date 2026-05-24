@@ -23,5 +23,17 @@
   "bookoffamiliars.search": "Search...",
   "bookoffamiliars.familiar_stats": "Familiar Stats",
   "bookoffamiliars.cannot_be_stored": "This entity cannot be stored",
-  "bookoffamiliars.stats_outdated": "Release &\nRe-store\nFor\nStats"
+  "bookoffamiliars.stats_outdated": "Release &\nRe-store\nFor\nStats",
+  "bookoffamiliars.familiar_recovering": "%s has died and is recovering...",
+  "bookoffamiliars.familiar_returned": "%d familiar(s) returned to your book!",
+  "bookoffamiliars.familiar_revived": "%s has been revived!",
+  "bookoffamiliars.not_enough_xp": "You need %d experience levels to revive this familiar.",
+  "bookoffamiliars.recovering_in": "Recovering: %s",
+  "bookoffamiliars.skip_cooldown": "Skip(%d lvls)",
+  "bookoffamiliars.delete_button": "Delete",
+  "bookoffamiliars.delete_confirm_line1": "Are you sure?",
+  "bookoffamiliars.delete_confirm_line2": "This will permanently delete %s from the world.",
+  "bookoffamiliars.familiar_recovering_full": "%s has died but your book is full. They will be added when space is available.",
+  "bookoffamiliars.familiar_removed_missing_mod": "%s was removed from your book because their mod is no longer installed.",
+  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book."
 }

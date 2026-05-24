@@ -1,15 +1,9 @@
 package net.fayebeard.bookffamiliars;
 
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 
 import java.util.List;
 
-// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
-// Demonstrates how to use Forge's config APIs
-@Mod.EventBusSubscriber(modid = BookOfFamiliarsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config
 {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
@@ -28,10 +22,17 @@ public class Config
                     "Format: [\"minecraft:cow\", \"minecraft:sheep\"]")
             .defineListAllowEmpty("entityWhitelist", List.of(), entry -> entry instanceof String);
 
+    public static final ForgeConfigSpec.IntValue RESURRECTION_COOLDOWN_MINUTES = BUILDER
+            .comment("Cooldown in minutes before a released familiar returns to the book after death")
+            .defineInRange("resurrectionCooldownMinutes", 20, 0, 1440);
+
+    public static final ForgeConfigSpec.IntValue RESURRECTION_XP_COST = BUILDER
+            .comment("Experience levels required to skip the resurrection cooldown.")
+            .defineInRange("resurrectionXpCost", 5, 0, 100);
+
+    public static final ForgeConfigSpec.BooleanValue REMOVE_INVALID_FAMILIARS = BUILDER
+            .comment("Automatically remove familiars from the book if their mod is no longer installed")
+            .define("removeInvalidFamiliars", true);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
-
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
-
-    }
 }
