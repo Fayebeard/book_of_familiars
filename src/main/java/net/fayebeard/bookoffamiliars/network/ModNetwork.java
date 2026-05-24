@@ -31,5 +31,17 @@ public class ModNetwork {
                 .decoder(RenameFamiliarPacket::decode)
                 .consumerMainThread(RenameFamiliarPacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(DeleteFamiliarPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(DeleteFamiliarPacket::encode)
+                .decoder(DeleteFamiliarPacket::decode)
+                .consumerMainThread(DeleteFamiliarPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(SkipRecoveryCooldownPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(SkipRecoveryCooldownPacket::encode)
+                .decoder(SkipRecoveryCooldownPacket::decode)
+                .consumerMainThread(SkipRecoveryCooldownPacket::handle)
+                .add();
     }
 }
