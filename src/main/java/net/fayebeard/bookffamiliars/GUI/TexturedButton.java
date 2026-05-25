@@ -8,16 +8,16 @@ import net.minecraft.resources.ResourceLocation;
 
 public class TexturedButton extends Button {
 
-    private final ResourceLocation texture;
-    private final int textureX;
-    private final int textureY;
-    private final int hoveredTextureY;
-    private final int textureWidth;
-    private final int textureHeight;
-    private final int textureSheetWidth;
-    private final int textureSheetHeight;
-    private final net.minecraft.network.chat.Component label;
-    private final int labelColour;
+    protected final ResourceLocation texture;
+    protected final int textureX;
+    protected final int textureY;
+    protected final int hoveredTextureY;
+    protected final int textureWidth;
+    protected final int textureHeight;
+    protected final int textureSheetWidth;
+    protected final int textureSheetHeight;
+    protected final net.minecraft.network.chat.Component label;
+    protected final int labelColour;
 
     public TexturedButton(int x, int y, int width, int height,
                           Component label,

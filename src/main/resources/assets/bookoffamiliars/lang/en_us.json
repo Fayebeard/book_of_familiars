@@ -35,5 +35,8 @@
   "bookoffamiliars.delete_confirm_line2": "This will permanently delete %s from the world.",
   "bookoffamiliars.familiar_recovering_full": "%s has died but your book is full. They will be added when space is available.",
   "bookoffamiliars.familiar_removed_missing_mod": "%s was removed from your book because their mod is no longer installed.",
-  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book."
+  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book.",
+  "bookoffamiliars.revival_confirm_line1": "Are you sure?",
+  "bookoffamiliars.revival_confirm_disable": "This familiar will no longer be revived after death.",
+  "bookoffamiliars.revival_confirm_enable": "This familiar will be revived after death."
 }

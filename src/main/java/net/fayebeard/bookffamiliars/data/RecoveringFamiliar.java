@@ -17,7 +17,8 @@ public record RecoveringFamiliar(
         boolean hasAttackDamage,
         int itemCount,
         UUID familiarUUID,
-        long recoverAt) {
+        long recoverAt,
+        boolean revival) {
 
     public RecoveringFamiliar {
         nbt = nbt.copy();
@@ -35,7 +36,8 @@ public record RecoveringFamiliar(
                     Codec.BOOL.optionalFieldOf("hasAttackDamage", false).forGetter(RecoveringFamiliar::hasAttackDamage),
                     Codec.INT.optionalFieldOf("itemCount", -1).forGetter(RecoveringFamiliar::itemCount),
                     Codec.STRING.xmap(UUID::fromString, UUID::toString).fieldOf("familiarUUID").forGetter(RecoveringFamiliar::familiarUUID),
-                    Codec.LONG.fieldOf("recoverAt").forGetter(RecoveringFamiliar::recoverAt)
+                    Codec.LONG.fieldOf("recoverAt").forGetter(RecoveringFamiliar::recoverAt),
+                    Codec.BOOL.optionalFieldOf("revival", true).forGetter(RecoveringFamiliar::revival)
             ).apply(instance, RecoveringFamiliar::new));
 
     public static RecoveringFamiliar from(StoredFamiliar familiar, UUID uuid, long recoverAt) {
@@ -43,12 +45,12 @@ public record RecoveringFamiliar(
                 familiar.nbt(), familiar.entityType(), familiar.displayName(),
                 familiar.currentHealth(), familiar.maxHealth(), familiar.speed(),
                 familiar.attackDamage(), familiar.hasAttackDamage(), familiar.itemCount(),
-                uuid, recoverAt
+                uuid, recoverAt, familiar.revival()
         );
     }
 
     public StoredFamiliar toStoredFamiliar() {
         return new StoredFamiliar(nbt, entityType, displayName,
-                currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount);
+                currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount, revival);
     }
 }

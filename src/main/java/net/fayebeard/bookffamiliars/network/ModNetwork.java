@@ -53,5 +53,12 @@ public class ModNetwork {
                 SkipRecoveryCooldownPacket::decode,
                 SkipRecoveryCooldownPacket::handle
         );
+
+        CHANNEL.registerMessage(id++,
+                ToggleRevivalPacket.class,
+                ToggleRevivalPacket::encode,
+                ToggleRevivalPacket::decode,
+                ToggleRevivalPacket::handle
+        );
     }
 }

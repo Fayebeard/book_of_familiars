@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.nbt.CompoundTag;
 
 public record StoredFamiliar(CompoundTag nbt, String entityType, String displayName,
-                             float currentHealth, float maxHealth, float speed, float attackDamage, boolean hasAttackDamage, int itemCount) {
+                             float currentHealth, float maxHealth, float speed, float attackDamage, boolean hasAttackDamage, int itemCount, boolean revival) {
 
     public StoredFamiliar {
         nbt = nbt.copy();
@@ -21,6 +21,7 @@ public record StoredFamiliar(CompoundTag nbt, String entityType, String displayN
                     Codec.FLOAT.optionalFieldOf("speed", 0f).forGetter(StoredFamiliar::speed),
                     Codec.FLOAT.optionalFieldOf("attackDamage", 0f).forGetter(StoredFamiliar::attackDamage),
                     Codec.BOOL.optionalFieldOf("hasAttackDamage", false).forGetter(StoredFamiliar::hasAttackDamage),
-                    Codec.INT.optionalFieldOf("itemCount", -1).forGetter(StoredFamiliar::itemCount)
+                    Codec.INT.optionalFieldOf("itemCount", -1).forGetter(StoredFamiliar::itemCount),
+                    Codec.BOOL.optionalFieldOf("revival", true).forGetter(StoredFamiliar::revival)
             ).apply(instance, StoredFamiliar::new));
 }
