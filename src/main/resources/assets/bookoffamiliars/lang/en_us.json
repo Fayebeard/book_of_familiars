@@ -14,8 +14,8 @@
   "bookoffamiliars.configuration.resurrectionXpCost": "Resurrection XP Cost (levels)",
   "bookoffamiliars.configuration.resurrectionXpCost.tooltip": "Experience levels required to skip the resurrection cooldown.",
 
-  "bookoffamiliars.configuration.removeInvalidFamiliars": "Remove Invalid Familiars",
-  "bookoffamiliars.configuration.removeInvalidFamiliars.tooltip": "Automatically remove familiars from the book if their mod is no longer installed.",
+  "bookoffamiliars.configuration.autoRemoveInvalidFamiliars": "Remove Invalid Familiars",
+  "bookoffamiliars.configuration.autoRemoveInvalidFamiliars.tooltip": "Automatically remove familiars from the book if their mod is no longer installed.",
 
   "bookoffamiliars.configuration.enableResurrection": "Enable Resurrection",
   "bookoffamiliars.configuration.enableResurrection.tooltip": "Enable the resurrection system. If disabled, familiars will not return to the book after death",

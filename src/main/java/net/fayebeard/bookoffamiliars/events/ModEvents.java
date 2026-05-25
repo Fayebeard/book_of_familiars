@@ -40,7 +40,7 @@ public class ModEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         MinecraftServer server = player.level().getServer();
 
-        if (Config.REMOVE_INVALID_FAMILIARS.get()) {
+        if (Config.AUTO_REMOVE_INVALID_FAMILIARS.get()) {
             FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
             List<String> removed = data.removeUnresolvableEntities(
                     player.getName().getString());

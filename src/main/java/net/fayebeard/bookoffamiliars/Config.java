@@ -39,10 +39,10 @@ public class Config {
             .translation("bookoffamiliars.configuration.resurrectionXpCost")
             .defineInRange("resurrectionXpCost", 5, 0, 100);
 
-    public static final ModConfigSpec.BooleanValue REMOVE_INVALID_FAMILIARS = BUILDER
+    public static final ModConfigSpec.BooleanValue AUTO_REMOVE_INVALID_FAMILIARS = BUILDER
             .comment("Automatically remove familiars from the book if their mod is no longer installed.")
-            .translation("bookoffamiliars.configuration.removeInvalidFamiliars")
-            .define("removeInvalidFamiliars", false);
+            .translation("bookoffamiliars.configuration.autoRemoveInvalidFamiliars")
+            .define("autoRemoveInvalidFamiliars", false);
 
     public static final ModConfigSpec.BooleanValue ENABLE_RESURRECTION = BUILDER
             .comment("Enable the resurrection system. If disabled, familiars will not return to the book after death")
