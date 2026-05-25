@@ -43,5 +43,11 @@ public class ModNetwork {
                 .decoder(SkipRecoveryCooldownPacket::decode)
                 .consumerMainThread(SkipRecoveryCooldownPacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(ToggleRevivalPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ToggleRevivalPacket::encode)
+                .decoder(ToggleRevivalPacket::decode)
+                .consumerMainThread(ToggleRevivalPacket::handle)
+                .add();
     }
 }
