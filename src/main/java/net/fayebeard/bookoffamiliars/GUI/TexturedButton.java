@@ -9,16 +9,16 @@ import net.minecraft.resources.Identifier;
 
 public class TexturedButton extends Button {
 
-    private final Identifier texture;
-    private final int textureX;
-    private final int textureY;
-    private final int hoveredTextureY;
-    private final int textureWidth;
-    private final int textureHeight;
-    private final int textureSheetWidth;
-    private final int textureSheetHeight;
-    private final Component label;
-    private final int labelColour;
+    protected final Identifier texture;
+    protected final int textureX;
+    protected final int textureY;
+    protected final int hoveredTextureY;
+    protected final int textureWidth;
+    protected final int textureHeight;
+    protected final int textureSheetWidth;
+    protected final int textureSheetHeight;
+    protected final Component label;
+    protected final int labelColour;
 
     public TexturedButton(int x, int y, int width, int height,
                           Component label,

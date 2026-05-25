@@ -63,5 +63,11 @@ public class BookOfFamiliarsMod {
                 DeleteFamiliarPacket.STREAM_CODEC,
                 DeleteFamiliarPacket::handle
         );
+
+        registrar.playToServer(
+                ToggleRevivalPacket.TYPE,
+                ToggleRevivalPacket.STREAM_CODEC,
+                ToggleRevivalPacket::handle
+        );
     }
 }

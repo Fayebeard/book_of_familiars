@@ -123,7 +123,13 @@ public class FamiliarBookItem extends Item {
                     ? allay.getCustomName().getString()
                     : allay.getType().getDescription().getString();
 
-        } else if (Config.ENTITY_WHITELIST.get().contains(entityId)
+        } else if (Config.ENTITY_WHITELIST.get().stream().anyMatch(entry -> {
+                if (entry.endsWith(":*")) {
+                    String modid = entry.substring(0, entry.length() - 2);
+                    return entityId.startsWith(modid + ":");
+                }
+                return entry.equals(entityId);
+            })
                     || entity instanceof CopperGolem
                     || entity instanceof SnowGolem
                     || entity instanceof IronGolem
@@ -191,7 +197,7 @@ public class FamiliarBookItem extends Item {
             }
         }
 
-        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName, currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount);
+        StoredFamiliar familiar = new StoredFamiliar(nbt, entityType, displayName, currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount, true);
         player.getData(ModAttachments.FAMILIAR_DATA).addFamiliar(familiar);
         ServerLevel serverLevel = (ServerLevel) level;
         serverLevel.sendParticles(ParticleTypes.POOF,

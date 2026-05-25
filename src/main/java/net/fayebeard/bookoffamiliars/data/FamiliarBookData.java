@@ -91,7 +91,7 @@ public class FamiliarBookData {
                 nbt.putString("CustomName", newName);
             }
             familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName,
-                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount()));
+                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount(), old.revival()));
         }
     }
 
@@ -108,7 +108,7 @@ public class FamiliarBookData {
             recovering.set(index, new RecoveringFamiliar(nbt, old.entityType(), newName,
                     old.currentHealth(), old.maxHealth(), old.speed(),
                     old.attackDamage(), old.hasAttackDamage(), old.itemCount(),
-                    old.familiarUUID(), old.recoverAt()));
+                    old.familiarUUID(), old.recoverAt(), old.revival()));
         }
     }
 
@@ -145,5 +145,11 @@ public class FamiliarBookData {
             }
         }
         return removed;
+    }
+
+    public void addFamiliarAt(int index, StoredFamiliar familiar) {
+        if (index >= 0 && index <= familiars.size()) {
+            familiars.add(index, familiar);
+        }
     }
 }

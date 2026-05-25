@@ -75,6 +75,7 @@ public class ModEvents {
     @SubscribeEvent
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
+        if (!Config.ENABLE_RESURRECTION.get()) return;
 
         MinecraftServer server = event.getEntity().level().getServer();
         if (server == null) return;
@@ -86,6 +87,8 @@ public class ModEvents {
 
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
         tracker.remove(entityUUID);
+
+        if (!entry.snapshot().revival()) return;
 
         long cooldownTicks = (long) Config.RESURRECTION_COOLDOWN_MINUTES.get() * 60L * 20L;
         long recoverAt = event.getEntity().level().getGameTime() + cooldownTicks;
