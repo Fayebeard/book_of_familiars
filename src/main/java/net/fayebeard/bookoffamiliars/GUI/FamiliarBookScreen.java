@@ -3,8 +3,10 @@ package net.fayebeard.bookoffamiliars.GUI;
 import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.data.RecoveringFamiliar;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
+import net.fayebeard.bookoffamiliars.network.DeleteFamiliarPacket;
 import net.fayebeard.bookoffamiliars.network.ReleaseFamiliarPacket;
 import net.fayebeard.bookoffamiliars.network.SkipRecoveryCooldownPacket;
+import net.fayebeard.bookoffamiliars.network.ToggleRevivalPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -68,6 +70,7 @@ public class FamiliarBookScreen extends Screen {
     private Button skipCooldownButton;
     private Button deleteButton;
     private EditBox searchField;
+    private ToggleTexturedButton revivalButton;
 
     private static final Component FAMILIAR_INFO = Component.translatable("bookoffamiliars.familiar_info");
     private static final Component FAMILIAR_STATS = Component.translatable("bookoffamiliars.familiar_stats");
@@ -222,11 +225,47 @@ public class FamiliarBookScreen extends Screen {
                     if (!displayList.isEmpty()) {
                         savedPage = currentPage;
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active(StoredFamiliar familiar, int familiarIndex)) {
-                            Minecraft.getInstance().setScreen(new DeleteConfirmScreen(
-                                    this, familiarIndex, false, familiar.displayName()));
+                            Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                    this,
+                                    Component.translatable("bookoffamiliars.delete_confirm_line1"),
+                                    Component.translatable("bookoffamiliars.delete_confirm_line2", familiar.displayName()),
+                                    () -> PacketDistributor.sendToServer(new DeleteFamiliarPacket(familiarIndex, false))));
                         } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering(RecoveringFamiliar familiar, int recoveringIndex)) {
-                            Minecraft.getInstance().setScreen(new DeleteConfirmScreen(
-                                    this, recoveringIndex, true, familiar.displayName()));
+                            Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                    this,
+                                    Component.translatable("bookoffamiliars.delete_confirm_line1"),
+                                    Component.translatable("bookoffamiliars.delete_confirm_line2", familiar.displayName()),
+                                    () -> PacketDistributor.sendToServer(new DeleteFamiliarPacket(recoveringIndex, true))));
+                        }
+                    }
+                });
+
+        revivalButton = new ToggleTexturedButton(
+                bookX + 106, bookY + 42,
+                14, 14,
+                59, 86,
+                BOOK_TEXTURE,
+                197, 216,
+                14, 14,
+                512, 256,
+                btn -> {
+                    if (!displayList.isEmpty()) {
+                        if (displayList.get(currentPage) instanceof DisplayEntry.Active(StoredFamiliar familiar, int familiarIndex)) {
+                            Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                    this,
+                                    Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                    Component.translatable(familiar.revival()
+                                            ? "bookoffamiliars.revival_confirm_disable"
+                                            : "bookoffamiliars.revival_confirm_enable"),
+                                    () -> PacketDistributor.sendToServer(new ToggleRevivalPacket(familiarIndex, false))));
+                        } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering(RecoveringFamiliar familiar, int recoveringIndex)) {
+                            Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                    this,
+                                    Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                    Component.translatable(familiar.revival()
+                                            ? "bookoffamiliars.revival_confirm_disable"
+                                            : "bookoffamiliars.revival_confirm_enable"),
+                                    () -> PacketDistributor.sendToServer(new ToggleRevivalPacket(recoveringIndex, true))));
                         }
                     }
                 });
@@ -256,6 +295,7 @@ public class FamiliarBookScreen extends Screen {
         this.addRenderableWidget(releaseButton);
         this.addRenderableWidget(renameButton);
         this.addRenderableWidget(skipCooldownButton);
+        this.addRenderableWidget(revivalButton);
 
         updateButtonStates();
     }
@@ -299,6 +339,15 @@ public class FamiliarBookScreen extends Screen {
         deleteButton.visible = hasEntries;
 
         skipCooldownButton.visible = isRecovering;
+
+        revivalButton.visible = hasEntries && Config.ENABLE_RESURRECTION.get();
+        if (hasEntries) {
+            boolean revival = switch (displayList.get(currentPage)) {
+                case DisplayEntry.Active a -> a.familiar().revival();
+                case DisplayEntry.Recovering r -> r.familiar().revival();
+            };
+            revivalButton.setActive(revival);
+        }
     }
 
     @Override

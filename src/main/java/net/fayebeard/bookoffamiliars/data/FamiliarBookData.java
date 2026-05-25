@@ -80,7 +80,7 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
                         Component.literal(newName), registryAccess));
             }
             familiars.set(index, new StoredFamiliar(nbt, old.entityType(), newName,
-                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount()));
+                    old.currentHealth(), old.maxHealth(), old.speed(), old.attackDamage(), old.hasAttackDamage(), old.itemCount(), old.revival()));
         }
     }
 
@@ -97,7 +97,7 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
             recovering.set(index, new RecoveringFamiliar(nbt, old.entityType(), newName,
                     old.currentHealth(), old.maxHealth(), old.speed(),
                     old.attackDamage(), old.hasAttackDamage(), old.itemCount(),
-                    old.familiarUUID(), old.recoverAt()));
+                    old.familiarUUID(), old.recoverAt(), old.revival()));
         }
     }
 
@@ -134,6 +134,12 @@ public class FamiliarBookData implements INBTSerializable<CompoundTag> {
             }
         }
         return removed;
+    }
+
+    public void addFamiliarAt(int index, StoredFamiliar familiar) {
+        if (index >= 0 && index <= familiars.size()) {
+            familiars.add(index, familiar);
+        }
     }
 
     @Override

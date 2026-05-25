@@ -8,14 +8,17 @@
   "bookoffamiliars.configuration.entityWhitelist": "Entity Whitelist",
   "bookoffamiliars.configuration.entityWhitelist.tooltip": "List of additional entity types that can be stored beyond the default tamed entities. Format: [\"minecraft:cow\", \"minecraft:sheep\"]",
 
-  "bookoffamiliars.configuation.resurrectionCooldownMinutes": "Resurrection Cooldown (minutes)",
-  "bookoffamiliars.configuation.resurrectionCooldownMinutes.tooltip": "Cooldown in minutes before a released familiar returns to the book after death",
+  "bookoffamiliars.configuration.resurrectionCooldownMinutes": "Resurrection Cooldown (minutes)",
+  "bookoffamiliars.configuration.resurrectionCooldownMinutes.tooltip": "Cooldown in minutes before a released familiar returns to the book after death",
 
   "bookoffamiliars.configuration.resurrectionXpCost": "Resurrection XP Cost (levels)",
   "bookoffamiliars.configuration.resurrectionXpCost.tooltip": "Experience levels required to skip the resurrection cooldown.",
 
-  "bookoffamiliars.configuration.removeInvalidFamiliars": "Remove Invalid Familiars",
-  "bookoffamiliars.configuration.removeInvalidFamiliars.tooltip": "Automatically remove familiars from the book if their mod is no longer installed.",
+  "bookoffamiliars.configuration.autoRemoveInvalidFamiliars": "Remove Invalid Familiars",
+  "bookoffamiliars.configuration.autoRemoveInvalidFamiliars.tooltip": "Automatically remove familiars from the book if their mod is no longer installed.",
+
+  "bookoffamiliars.configuration.enableResurrection": "Enable Resurrection",
+  "bookoffamiliars.configuration.enableResurrection.tooltip": "Enable the resurrection system. If disabled, familiars will not return to the book after death",
 
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
@@ -53,5 +56,8 @@
   "bookoffamiliars.delete_confirm_line2": "This will permanently delete %s from the world.",
   "bookoffamiliars.familiar_recovering_full": "%s has died but your book is full. They will be added when space is available.",
   "bookoffamiliars.familiar_removed_missing_mod": "%s was removed from your book because their mod is no longer installed.",
-  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book."
+  "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book.",
+  "bookoffamiliars.revival_confirm_line1": "Are you sure?",
+  "bookoffamiliars.revival_confirm_disable": "This familiar will no longer be revived after death.",
+  "bookoffamiliars.revival_confirm_enable": "This familiar will be revived after death."
 }

@@ -41,7 +41,7 @@ public class ModEvents {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 
-        if (Config.REMOVE_INVALID_FAMILIARS.get()) {
+        if (Config.AUTO_REMOVE_INVALID_FAMILIARS.get()) {
             FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
             List<String> removed = data.removeUnresolvableEntities(
                     player.getName().getString());
@@ -76,6 +76,7 @@ public class ModEvents {
     @SubscribeEvent
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
+        if (!Config.ENABLE_RESURRECTION.get()) return;
 
         MinecraftServer server = event.getEntity().getServer();
         if (server == null) return;
@@ -87,6 +88,8 @@ public class ModEvents {
 
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
         tracker.remove(entityUUID);
+
+        if (!entry.snapshot().revival()) return;
 
         long cooldownTicks = (long) Config.RESURRECTION_COOLDOWN_MINUTES.get() * 60L * 20L;
         long recoverAt = event.getEntity().level().getGameTime() + cooldownTicks;
