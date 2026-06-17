@@ -8,3 +8,5 @@ If you enounter any bugs, please report them [here](https://github.com/Fayebeard
 You can also make suggestions! I'd love to hear what features you'd like next. 
 
 For licensing, please see the CREDITS and LICENSE files. There are assets used in this mod that are not for reproduction or extraction, as outlined in the CREDITS file.
+
+For the latest update news about this and any upcoming mods, check out the [discord](https://discord.gg/P2Sgq9CZ)!
