@@ -5,16 +5,21 @@ import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookoffamiliars.data.RecoveringFamiliar;
+import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
+import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.NonNull;
+
+import java.util.List;
 
 public record SkipRecoveryCooldownPacket(int index) implements CustomPacketPayload {
 
@@ -63,9 +68,13 @@ public record SkipRecoveryCooldownPacket(int index) implements CustomPacketPaylo
             player.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_revived",
                     recoveringFamiliar.displayName()).withStyle(style -> style.withColor(0xFF55FF55)));
 
+            MinecraftServer server = player.level().getServer();
+            ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+            List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
+
             long currentGameTime = player.level().getGameTime();
             PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(
-                    data.getFamiliars(), data.getRecovering(), currentGameTime));
+                    data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         });
     }
 }

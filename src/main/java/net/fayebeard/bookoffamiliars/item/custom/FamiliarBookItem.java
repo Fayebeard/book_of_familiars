@@ -3,7 +3,9 @@ package net.fayebeard.bookoffamiliars.item.custom;
 import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
+import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
+import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.fayebeard.bookoffamiliars.util.ModUtils;
@@ -14,15 +16,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityReference;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.allay.Allay;
@@ -43,6 +43,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jspecify.annotations.NonNull;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -72,6 +73,11 @@ public class FamiliarBookItem extends Item {
             return true;
         }
 
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            ReleasedFamiliarTracker.get(server.overworld()).remove(entity.getUUID());
+        }
+
         String entityType;
         String displayName;
         CompoundTag nbt;
@@ -82,6 +88,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            tamableAnimal.stopRiding();
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             tamableAnimal.save(output);
             nbt = output.buildResult();
@@ -98,6 +105,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            horse.stopRiding();
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             horse.save(output);
             nbt = output.buildResult();
@@ -115,6 +123,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            allay.stopRiding();
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             allay.save(output);
             nbt = output.buildResult();
@@ -135,6 +144,7 @@ public class FamiliarBookItem extends Item {
                     || entity instanceof IronGolem
                     || entity instanceof HappyGhast
                     || entity instanceof Strider) {
+            entity.stopRiding();
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             entity.save(output);
             nbt = output.buildResult();
@@ -144,6 +154,7 @@ public class FamiliarBookItem extends Item {
                     : entity.getType().getDescription().getString();
 
         } else if (entity instanceof Fox fox) {
+            fox.stopRiding();
             TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
             fox.save(output);
             nbt = output.buildResult();
@@ -173,6 +184,15 @@ public class FamiliarBookItem extends Item {
                     ? fox.getCustomName().getString()
                     : fox.getType().getDescription().getString();
 
+        } else if (entity instanceof OwnableEntity ownable && ownable.getOwner() == player) {
+            entity.stopRiding();
+            TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+            entity.save(output);
+            nbt = output.buildResult();
+            entityType = entity.getType().getDescriptionId();
+            displayName = entity.hasCustomName() && entity.getCustomName() != null
+                    ? entity.getCustomName().getString()
+                    : entity.getType().getDescription().getString();
         } else {
             return false;
         }
@@ -217,8 +237,12 @@ public class FamiliarBookItem extends Item {
         if (!level.isClientSide()) {
             ServerPlayer serverPlayer = (ServerPlayer) player;
             FamiliarBookData data = serverPlayer.getData(ModAttachments.FAMILIAR_DATA);
+            MinecraftServer server = serverPlayer.level().getServer();
+            List<TrackedFamiliar> tracked = server != null && Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(serverPlayer.getUUID(), server)
+                    : List.of();
             long currentGameTime = serverPlayer.level().getGameTime();
-            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime));
+            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         }
         return InteractionResult.SUCCESS;
     }

@@ -3,9 +3,7 @@ package net.fayebeard.bookoffamiliars.data;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.fayebeard.bookoffamiliars.BookOfFamiliarsMod;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.*;
@@ -114,37 +112,6 @@ public class FamiliarBookData {
 
     public boolean isFull(int maxFamiliars) {
         return familiars.size() + recovering.size() >= maxFamiliars;
-    }
-
-    public List<String> removeUnresolvableEntities(String playerName) {
-        List<String> removed = new ArrayList<>();
-        Iterator<StoredFamiliar> it = familiars.iterator();
-        while (it.hasNext()) {
-            StoredFamiliar f = it.next();
-            boolean exists = BuiltInRegistries.ENTITY_TYPE.stream()
-                    .anyMatch(e -> e.getDescriptionId().equals(f.entityType()));
-            if (!exists) {
-                removed.add(f.displayName());
-                BookOfFamiliarsMod.LOGGER.debug(
-                        "Removed unresolvable familiar '{}' (type: {}) from {}'s book.",
-                        f.displayName(), f.entityType(), playerName);
-                it.remove();
-            }
-        }
-        Iterator<RecoveringFamiliar> rit = recovering.iterator();
-        while (rit.hasNext()) {
-            RecoveringFamiliar r = rit.next();
-            boolean exists = BuiltInRegistries.ENTITY_TYPE.stream()
-                    .anyMatch(e -> e.getDescriptionId().equals(r.entityType()));
-            if (!exists) {
-                removed.add(r.displayName());
-                BookOfFamiliarsMod.LOGGER.debug(
-                        "Removed unresolvable recovering familiar '{}' (type: {}) from {}'s book.",
-                        r.displayName(), r.entityType(), playerName);
-                rit.remove();
-            }
-        }
-        return removed;
     }
 
     public void addFamiliarAt(int index, StoredFamiliar familiar) {

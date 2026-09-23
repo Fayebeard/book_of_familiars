@@ -79,10 +79,12 @@ public record DeleteFamiliarPacket(int index, boolean isRecovering) implements C
                     }
                 }
             }
+            ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+            List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
 
             long currentGameTime = player.level().getGameTime();
             PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(
-                    data.getFamiliars(), data.getRecovering(), currentGameTime));
+                    data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         });
     }
 }
