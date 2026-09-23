@@ -69,8 +69,9 @@ public record SkipRecoveryCooldownPacket(int index) implements CustomPacketPaylo
                     recoveringFamiliar.displayName()).withStyle(style -> style.withColor(0xFF55FF55)));
 
             MinecraftServer server = player.level().getServer();
-            ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
-            List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
 
             long currentGameTime = player.level().getGameTime();
             PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(

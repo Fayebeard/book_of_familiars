@@ -1,6 +1,7 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
+import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.*;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
@@ -66,8 +67,9 @@ public record ToggleRevivalPacket(int index, boolean isRecovering) implements Cu
             }
 
             MinecraftServer server = player.level().getServer();
-            ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
-            List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
 
             long currentGameTime = player.level().getGameTime();
             PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(

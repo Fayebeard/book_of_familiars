@@ -1,6 +1,7 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
+import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
@@ -67,8 +68,9 @@ public record RenameFamiliarPacket(int index, String name, boolean isRecovering)
                 data.renameFamiliar(index, name, player.registryAccess());
             }
             MinecraftServer server = player.level().getServer();
-            ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
-            List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
 
             long currentGameTime = player.level().getGameTime();
             PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
