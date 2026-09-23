@@ -238,7 +238,7 @@ public class FamiliarBookItem extends Item {
             ServerPlayer serverPlayer = (ServerPlayer) player;
             FamiliarBookData data = serverPlayer.getData(ModAttachments.FAMILIAR_DATA);
             MinecraftServer server = serverPlayer.level().getServer();
-            List<TrackedFamiliar> tracked = server != null && Config.ENABLE_TRACKING.get()
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
                     ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(serverPlayer.getUUID(), server)
                     : List.of();
             long currentGameTime = serverPlayer.level().getGameTime();

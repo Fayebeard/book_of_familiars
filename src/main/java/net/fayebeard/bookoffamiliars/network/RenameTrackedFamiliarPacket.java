@@ -19,8 +19,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.NonNull;
 
-import java.awt.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,7 +39,7 @@ public record RenameTrackedFamiliarPacket(UUID familiarUUID, String name) implem
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
+    public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
