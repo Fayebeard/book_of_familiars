@@ -3,6 +3,7 @@ package net.fayebeard.bookffamiliars.GUI;
 import net.fayebeard.bookffamiliars.Config;
 import net.fayebeard.bookffamiliars.data.RecoveringFamiliar;
 import net.fayebeard.bookffamiliars.data.StoredFamiliar;
+import net.fayebeard.bookffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookffamiliars.network.*;
 import net.fayebeard.bookffamiliars.sounds.ModSounds;
 import net.minecraft.client.Minecraft;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -33,9 +35,12 @@ public class FamiliarBookScreen extends Screen {
         record Recovering(RecoveringFamiliar familiar, int recoveringIndex) implements DisplayEntry {}
     }
 
+    private enum Tab { STORED, TRACKED }
+
     private final List<StoredFamiliar> familiars = new ArrayList<>();
     private final List<RecoveringFamiliar> recovering = new ArrayList<>();
     private final List<DisplayEntry> displayList = new ArrayList<>();
+    private final List<TrackedFamiliar> tracked = new ArrayList<>();
 
     private long serverGameTimeAtReceive;
     private long systemTimeAtReceive;
@@ -53,11 +58,16 @@ public class FamiliarBookScreen extends Screen {
     private static final ResourceLocation BOOK_TEXTURE =
             new ResourceLocation("bookoffamiliars", "textures/gui/familiar_book.png");
 
-    private static final int BOOK_WIDTH = 291;
+    private static final int BOOK_WIDTH = 303;
     private static final int BOOK_HEIGHT = 181;
     private int bookX;
     private int bookY;
     private static int savedPage = 0;
+
+    private Tab currentTab = Tab.STORED;
+    private static Tab savedTab = Tab.STORED;
+    private int trackedPage = 0;
+    private static int savedTrackedPage = 0;
 
     private Button prevButton;
     private Button nextButton;
@@ -67,18 +77,23 @@ public class FamiliarBookScreen extends Screen {
     private Button deleteButton;
     private EditBox searchField;
     private ToggleTexturedButton revivalButton;
+    private TabButton storedTabButton;
+    private TabButton trackedTabButton;
+    private Button recallButton;
 
     private static final Component FAMILIAR_INFO = Component.translatable("bookoffamiliars.familiar_info");
     private static final Component FAMILIAR_STATS = Component.translatable("bookoffamiliars.familiar_stats");
     private static final Component NO_FAMILIARS = Component.translatable("bookoffamiliars.no_familiars_stored");
+    private static final Component NO_TRACKED = Component.translatable("bookoffamiliars.no_familiars_released");
 
     private String cachedTimerText = "";
     private long lastTimerSecond = -1;
 
-    public FamiliarBookScreen(List<StoredFamiliar> familiars, List<RecoveringFamiliar> recovering, long currentGameTime) {
+    public FamiliarBookScreen(List<StoredFamiliar> familiars, List<RecoveringFamiliar> recovering, List<TrackedFamiliar> tracked, long currentGameTime) {
         super(Component.translatable("bookoffamiliars.familiar_book_screen"));
         this.familiars.addAll(familiars);
         this.recovering.addAll(recovering);
+        this.tracked.addAll(tracked);
         this.serverGameTimeAtReceive = currentGameTime;
         this.systemTimeAtReceive = System.currentTimeMillis();
         rebuildDisplayList();
@@ -107,6 +122,28 @@ public class FamiliarBookScreen extends Screen {
         bookX = (this.width - BOOK_WIDTH) / 2;
         bookY = (this.height - BOOK_HEIGHT) / 2;
         currentPage = Math.min(savedPage, Math.max(0, displayList.size() - 1));
+        trackedPage = Math.min(savedTrackedPage, Math.max(0, tracked.size() - 1));
+        currentTab = savedTab;
+
+        storedTabButton = new TabButton(
+                bookX + 278, bookY + 23,
+                25, 22,
+                BOOK_TEXTURE,
+                17, 163, 136,
+                25, 22, 512, 256,
+                currentTab == Tab.STORED,
+                btn -> switchTab(Tab.STORED)
+        );
+
+        trackedTabButton = new TabButton(
+                bookX + 278, bookY + 48,
+                25, 22,
+                BOOK_TEXTURE,
+                62, 163, 136,
+                25, 22, 512, 256,
+                currentTab == Tab.TRACKED,
+                btn -> switchTab(Tab.TRACKED)
+        );
 
         prevButton = new TexturedButton(
                 bookX + 24, bookY + 148,
@@ -119,15 +156,18 @@ public class FamiliarBookScreen extends Screen {
                 512, 256,
                 0,
                 btn -> {
-                    if (currentPage > 0) {
+                    if (currentTab == Tab.STORED && currentPage > 0) {
                         currentPage--;
                         savedPage = currentPage;
-                        if (Minecraft.getInstance().player != null) {
-                            Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
-                        }
-                        discardClientEntity();
-                        updateButtonStates();
+                    } else if (currentTab == Tab.TRACKED && trackedPage > 0) {
+                        trackedPage--;
+                        savedTrackedPage = trackedPage;
                     }
+                    if (Minecraft.getInstance().player != null) {
+                        Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
+                    }
+                    discardClientEntity();
+                    updateButtonStates();
                 });
 
         nextButton = new TexturedButton(
@@ -141,14 +181,17 @@ public class FamiliarBookScreen extends Screen {
                 512, 256,
                 0,
                 btn -> {
-                    if (currentPage < displayList.size() - 1) {
+                    if (currentTab == Tab.STORED && currentPage < displayList.size() - 1) {
                         currentPage++;
                         savedPage = currentPage;
-                        if (Minecraft.getInstance().player != null) {
-                            Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
-                        }
-                        discardClientEntity();
+                    } else if (currentTab == Tab.TRACKED && trackedPage < tracked.size() - 1) {
+                        trackedPage++;
+                        savedTrackedPage = trackedPage;
                     }
+                    if (Minecraft.getInstance().player != null) {
+                        Minecraft.getInstance().player.playSound(SoundEvents.BOOK_PAGE_TURN, 0.25f, 1.0f);
+                    }
+                    discardClientEntity();
                     updateButtonStates();
                 });
 
@@ -168,6 +211,22 @@ public class FamiliarBookScreen extends Screen {
                     }
                 });
 
+        recallButton = new TexturedButton(
+                bookX + 171, bookY + 131,
+                87, 14,
+                Component.translatable("bookoffamiliars.recall_button"),
+                BOOK_TEXTURE,
+                307, 198,
+                216,
+                87, 14,
+                512, 256,
+                0xFFD700,
+                btn -> {
+                    if (!tracked.isEmpty()) {
+                        ModNetwork.CHANNEL.sendToServer(new RecallFamiliarPacket(tracked.get(trackedPage).familiarUUID()));
+                    }
+                });
+
         renameButton = new TexturedButton(
                 bookX + 171, bookY + 113,
                 87, 14,
@@ -179,14 +238,17 @@ public class FamiliarBookScreen extends Screen {
                 512, 256,
                 0xFFD700,
                 btn -> {
-                    if (!displayList.isEmpty()) {
+                    if (currentTab == Tab.TRACKED && !tracked.isEmpty()) {
+                        savedTrackedPage = trackedPage;
+                        TrackedFamiliar tf = tracked.get(trackedPage);
+                        Minecraft.getInstance().setScreen(new RenameScreen(this, tf.snapshot().displayName(),
+                                name -> ModNetwork.CHANNEL.sendToServer(new RenameTrackedFamiliarPacket(tf.familiarUUID(), name))));
+                    } else if (currentTab == Tab.STORED && !displayList.isEmpty()) {
                         savedPage = currentPage;
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
-                            Minecraft.getInstance().setScreen(
-                                    new RenameScreen(this, a.familiarIndex, false, a.familiar.displayName()));
+                            Minecraft.getInstance().setScreen(new RenameScreen(this, a.familiarIndex, false, a.familiar.displayName()));
                         } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering r) {
-                            Minecraft.getInstance().setScreen(
-                                    new RenameScreen(this, r.recoveringIndex, true, r.familiar.displayName()));
+                            Minecraft.getInstance().setScreen(new RenameScreen(this, r.recoveringIndex, true, r.familiar.displayName()));
                         }
                     }
                 });
@@ -218,7 +280,15 @@ public class FamiliarBookScreen extends Screen {
                 512, 256,
                 0xFFD700,
                 btn -> {
-                    if (!displayList.isEmpty()) {
+                    if (currentTab == Tab.TRACKED && !tracked.isEmpty()) {
+                        savedTrackedPage = trackedPage;
+                        TrackedFamiliar tf = tracked.get(trackedPage);
+                        Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                this,
+                                Component.translatable("bookoffamiliars.delete_confirm_line1"),
+                                Component.translatable("bookoffamiliars.delete_confirm_line2", tf.snapshot().displayName()),
+                                () -> ModNetwork.CHANNEL.sendToServer(new DeleteTrackedFamiliarPacket(tf.familiarUUID()))));
+                    } else if (currentTab == Tab.STORED && !displayList.isEmpty()) {
                         savedPage = currentPage;
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
                             Minecraft.getInstance().setScreen(new ConfirmScreen(
@@ -247,7 +317,16 @@ public class FamiliarBookScreen extends Screen {
                 14, 14,
                 512, 256,
                 btn -> {
-                    if (!displayList.isEmpty()) {
+                    if (currentTab == Tab.TRACKED && !tracked.isEmpty()) {
+                        TrackedFamiliar tf = tracked.get(trackedPage);
+                        Minecraft.getInstance().setScreen(new ConfirmScreen(
+                                this,
+                                Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                Component.translatable(tf.snapshot().revival()
+                                        ? "bookoffamiliars.revival_confirm_disable"
+                                        : "bookoffamiliars.revival_confirm_enable"),
+                                () -> ModNetwork.CHANNEL.sendToServer(new ToggleTrackedRevivalPacket(tf.familiarUUID()))));
+                    } else if (currentTab == Tab.STORED && !displayList.isEmpty()) {
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
                             Minecraft.getInstance().setScreen(new ConfirmScreen(
                                     this,
@@ -296,7 +375,23 @@ public class FamiliarBookScreen extends Screen {
         this.addRenderableWidget(renameButton);
         this.addRenderableWidget(skipCooldownButton);
         this.addRenderableWidget(revivalButton);
+        this.addRenderableWidget(storedTabButton);
+        this.addRenderableWidget(trackedTabButton);
+        this.addRenderableWidget(recallButton);
 
+        updateButtonStates();
+        trackedTabButton.visible = Config.ENABLE_TRACKING.get();
+    }
+
+    private void switchTab(Tab tab) {
+        if (currentTab == tab) return;
+        currentTab = tab;
+        discardClientEntity();
+        showDropdown = false;
+        dropdownResults.clear();
+        dropdownScrollOffset = 0;
+        searchField.setValue("");
+        searchQuery = "";
         updateButtonStates();
     }
 
@@ -331,28 +426,52 @@ public class FamiliarBookScreen extends Screen {
     }
 
     private void updateButtonStates() {
-        boolean hasEntries = !displayList.isEmpty();
-        boolean isRecovering = hasEntries && displayList.get(currentPage) instanceof DisplayEntry.Recovering;
+        storedTabButton.setActive(currentTab == Tab.STORED);
+        trackedTabButton.setActive(currentTab == Tab.TRACKED);
 
-        prevButton.visible = currentPage > 0;
-        nextButton.visible = currentPage < displayList.size() - 1;
+        if (!Config.ENABLE_TRACKING.get() && currentTab == Tab.TRACKED) {
+            currentTab = Tab.STORED;
+        }
 
-        releaseButton.visible = hasEntries && !isRecovering;
-        renameButton.visible = hasEntries;
-        searchField.visible = hasEntries;
-        deleteButton.visible = hasEntries;
+        if (currentTab == Tab.STORED) {
+            boolean hasEntries = !displayList.isEmpty();
+            boolean isRecovering = hasEntries && displayList.get(currentPage) instanceof DisplayEntry.Recovering;
 
-        skipCooldownButton.visible = isRecovering;
+            prevButton.visible = currentPage > 0;
+            nextButton.visible = currentPage < displayList.size() - 1;
+            releaseButton.visible = hasEntries && !isRecovering;
+            recallButton.visible = false;
+            renameButton.visible = hasEntries;
+            searchField.visible = hasEntries;
+            deleteButton.visible = hasEntries;
+            skipCooldownButton.visible = isRecovering;
+            revivalButton.visible = hasEntries && Config.ENABLE_RESURRECTION.get();
 
-        revivalButton.visible = hasEntries && Config.ENABLE_RESURRECTION.get();
-        if (hasEntries) {
-            boolean revival = true;
-            if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
-                revival = a.familiar().revival();
-            } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering r) {
-                revival = r.familiar().revival();
+            if (hasEntries) {
+                boolean revival = true;
+                if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
+                    revival = a.familiar().revival();
+                } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering r) {
+                    revival = r.familiar().revival();
+                }
+                revivalButton.setActive(revival);
             }
-            revivalButton.setActive(revival);
+        } else {
+            boolean hasTracked = !tracked.isEmpty();
+
+            prevButton.visible = trackedPage > 0;
+            nextButton.visible = trackedPage < tracked.size() - 1;
+            releaseButton.visible = false;
+            recallButton.visible = hasTracked;
+            skipCooldownButton.visible = false;
+            renameButton.visible = hasTracked;
+            deleteButton.visible = hasTracked;
+            revivalButton.visible = hasTracked && Config.ENABLE_RESURRECTION.get();
+            searchField.visible = false;
+
+            if (hasTracked && Config.ENABLE_RESURRECTION.get()) {
+                revivalButton.setActive(tracked.get(trackedPage).snapshot().revival());
+            }
         }
     }
 
@@ -361,8 +480,12 @@ public class FamiliarBookScreen extends Screen {
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        if (!displayList.isEmpty()) {
+        if (currentTab == Tab.STORED && !displayList.isEmpty()) {
             String pageText = (currentPage + 1) + "/" + displayList.size();
+            guiGraphics.drawString(this.font, Component.literal(pageText),
+                    bookX + 270 - this.font.width(pageText), bookY + 29, 0x888888, false);
+        } else if (currentTab == Tab.TRACKED && !tracked.isEmpty()) {
+            String pageText = (trackedPage + 1) + "/" + tracked.size();
             guiGraphics.drawString(this.font, Component.literal(pageText),
                     bookX + 270 - this.font.width(pageText), bookY + 29, 0x888888, false);
         }
@@ -373,31 +496,38 @@ public class FamiliarBookScreen extends Screen {
         guiGraphics.drawString(this.font, FAMILIAR_STATS,
                 bookX + 214 - this.font.width(FAMILIAR_STATS) / 2, bookY + 20, 0x4A2F6B, false);
 
-        if (displayList.isEmpty()) {
-            guiGraphics.drawString(this.font, NO_FAMILIARS,
-                    bookX + 78 - this.font.width(NO_FAMILIARS) / 2, bookY + 70, 0x000000, false);
-        } else {
-            DisplayEntry entry = displayList.get(currentPage);
-            if (entry instanceof DisplayEntry.Active a) {
-                renderActiveFamiliar(guiGraphics, a.familiar(), mouseX, mouseY);
-            } else if (entry instanceof DisplayEntry.Recovering r) {
-                renderRecoveringFamiliar(guiGraphics, r.familiar(), mouseX, mouseY);
+        if (currentTab == Tab.STORED) {
+            if (displayList.isEmpty()) {
+                guiGraphics.drawString(this.font, NO_FAMILIARS,
+                        bookX + 78 - this.font.width(NO_FAMILIARS) / 2, bookY + 70, 0x000000, false);
+            } else {
+                DisplayEntry entry = displayList.get(currentPage);
+                if (entry instanceof DisplayEntry.Active a) {
+                    renderActiveFamiliar(guiGraphics, a.familiar(), mouseX, mouseY);
+                } else if (entry instanceof DisplayEntry.Recovering r) {
+                    renderRecoveringFamiliar(guiGraphics, r.familiar(), mouseX, mouseY);
+                }
             }
-        }
-
-        if (showDropdown) {
-            renderDropdown(guiGraphics, mouseX, mouseY);
+            if (showDropdown) {
+                renderDropdown(guiGraphics, mouseX, mouseY);
+            }
+        } else {
+            if (tracked.isEmpty()) {
+                guiGraphics.drawString(this.font, NO_TRACKED,
+                        bookX + 78 - this.font.width(NO_TRACKED) / 2, bookY + 70, 0x000000, false);
+            } else {
+                renderTrackedFamiliar(guiGraphics, tracked.get(trackedPage), mouseX, mouseY);
+            }
         }
     }
 
     private void renderActiveFamiliar(GuiGraphics guiGraphics, StoredFamiliar familiar, int mouseX, int mouseY) {
         renderEntityPreview(guiGraphics, mouseX, mouseY);
-        renderFamiliarNameAndType(guiGraphics, familiar);
+        renderFamiliarNameAndType(guiGraphics, familiar.displayName(), familiar.entityType());
         renderStats(guiGraphics, familiar);
     }
 
     private void renderRecoveringFamiliar(GuiGraphics guiGraphics, RecoveringFamiliar familiar, int mouseX, int mouseY) {
-        StoredFamiliar asStored = familiar.toStoredFamiliar();
         renderEntityPreview(guiGraphics, mouseX, mouseY);
 
         long estimatedNow = estimatedCurrentGameTime();
@@ -415,8 +545,34 @@ public class FamiliarBookScreen extends Screen {
 
         guiGraphics.drawString(this.font, timerComponent, textX, textY, 0xFFAA00, false);
 
-        renderFamiliarNameAndType(guiGraphics, asStored);
-        renderStats(guiGraphics, asStored);
+        renderFamiliarNameAndType(guiGraphics, familiar.displayName(), familiar.entityType());
+        renderStats(guiGraphics, familiar.toStoredFamiliar());
+    }
+
+    private void renderTrackedFamiliar(GuiGraphics guiGraphics, TrackedFamiliar familiar, int mouseX, int mouseY) {
+        renderEntityPreview(guiGraphics, mouseX, mouseY);
+        renderFamiliarNameAndType(guiGraphics, familiar.snapshot().displayName(), familiar.snapshot().entityType());
+
+        Component locationComponent;
+        if (Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.level().dimension().equals(familiar.dimension())) {
+            String dimensionName = familiar.dimension().location().getPath();
+            locationComponent = Component.translatable("bookoffamiliars.last_known_dimension", dimensionName);
+        } else {
+            BlockPos pos = familiar.position();
+            locationComponent = Component.translatable("bookoffamiliars.last_known_location",
+                    pos.getX(), pos.getY(), pos.getZ());
+        }
+
+        int textWidth = this.font.width(locationComponent);
+        int textX = bookX + 29 + (97 - textWidth) / 2;
+        guiGraphics.drawString(this.font, locationComponent, textX, bookY + 30, 0xFFAA00, false);
+
+        String[] lines = Component.translatable("bookoffamiliars.stats_unavailable_released").getString().split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            guiGraphics.drawString(this.font, Component.literal(lines[i]),
+                    bookX + 194, bookY + 47 + (i * 12), 0x888888, false);
+        }
     }
 
     private void renderEntityPreview(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -440,24 +596,20 @@ public class FamiliarBookScreen extends Screen {
         }
     }
 
-    private void renderFamiliarNameAndType(GuiGraphics guiGraphics, StoredFamiliar familiar) {
-        String displayName = familiar.displayName();
-        while (this.font.width(displayName) > 84 && !displayName.isEmpty()) {
-            displayName = displayName.substring(0, displayName.length() - 1);
-        }
-        if (displayName.length() < familiar.displayName().length()) {
-            displayName = displayName + "...";
-        }
-        guiGraphics.drawString(this.font, Component.literal(displayName),
-                bookX + 78 - this.font.width(displayName) / 2, bookY + 117, 0x000000, false);
+    private void renderFamiliarNameAndType(GuiGraphics guiGraphics, String displayName, String entityTypeKey) {
+        String name = displayName;
+        while (this.font.width(name) > 84 && !name.isEmpty())
+            name = name.substring(0, name.length() - 1);
+        if (name.length() < displayName.length())
+            name = name + "...";
+        guiGraphics.drawString(this.font, Component.literal(name),
+                bookX + 78 - this.font.width(name) / 2, bookY + 117, 0x000000, false);
 
-        String entityType = Component.translatable(familiar.entityType()).getString();
-        while (this.font.width(entityType) > 60 && !entityType.isEmpty()) {
+        String entityType = Component.translatable(entityTypeKey).getString();
+        while (this.font.width(entityType) > 60 && !entityType.isEmpty())
             entityType = entityType.substring(0, entityType.length() - 1);
-        }
-        if (entityType.length() < Component.translatable(familiar.entityType()).getString().length()) {
+        if (entityType.length() < Component.translatable(entityTypeKey).getString().length())
             entityType = entityType + "...";
-        }
         guiGraphics.drawString(this.font, Component.literal(entityType),
                 bookX + 77 - this.font.width(entityType) / 2, bookY + 133, 0x444444, false);
     }
@@ -619,6 +771,8 @@ public class FamiliarBookScreen extends Screen {
     @Override
     public void onClose() {
         savedPage = currentPage;
+        savedTrackedPage = trackedPage;
+        savedTab = currentTab;
         discardClientEntity();
 
         if (Minecraft.getInstance().player != null) {
@@ -627,17 +781,21 @@ public class FamiliarBookScreen extends Screen {
         super.onClose();
     }
 
-    public void refresh(List<StoredFamiliar> updatedFamiliars, List<RecoveringFamiliar> updatedRecovering, long currentGameTime) {
+    public void refresh(List<StoredFamiliar> updatedFamiliars, List<RecoveringFamiliar> updatedRecovering, List<TrackedFamiliar> updatedTracked, long currentGameTime) {
         discardClientEntity();
         this.familiars.clear();
         this.familiars.addAll(updatedFamiliars);
         this.recovering.clear();
         this.recovering.addAll(updatedRecovering);
+        this.tracked.clear();
+        this.tracked.addAll(updatedTracked);
         this.serverGameTimeAtReceive = currentGameTime;
         this.systemTimeAtReceive = System.currentTimeMillis();
         rebuildDisplayList();
         currentPage = Math.min(currentPage, Math.max(0, displayList.size() - 1));
+        trackedPage = Math.min(trackedPage, Math.max(0, tracked.size() - 1));
         savedPage = currentPage;
+        savedTrackedPage = trackedPage;
         showDropdown = false;
         dropdownResults.clear();
         dropdownScrollOffset = 0;
@@ -652,20 +810,22 @@ public class FamiliarBookScreen extends Screen {
     }
 
     private Entity getCurrentClientEntity() {
-        if (currentPage < 0 || currentPage >= displayList.size()) return null;
         if (currentClientEntity != null) return currentClientEntity;
         if (Minecraft.getInstance().level == null) return null;
 
-        CompoundTag nbt;
-        DisplayEntry current = displayList.get(currentPage);
-        if (current instanceof DisplayEntry.Active a) {
-            nbt = a.familiar().nbt();
-        } else if (current instanceof DisplayEntry.Recovering r) {
-            nbt = r.familiar().nbt();
-        } else {
-            nbt = new CompoundTag();
+        CompoundTag nbt = null;
+        if (currentTab == Tab.STORED && currentPage >= 0 && currentPage < displayList.size()) {
+            DisplayEntry current = displayList.get(currentPage);
+            if (current instanceof DisplayEntry.Active a) {
+                nbt = a.familiar().nbt();
+            } else if (current instanceof DisplayEntry.Recovering r) {
+                nbt = r.familiar().nbt();
+            }
+        } else if (currentTab == Tab.TRACKED && trackedPage >= 0 && trackedPage < tracked.size()) {
+            nbt = tracked.get(trackedPage).snapshot().nbt();
         }
 
+        if (nbt == null) return null;
         currentClientEntity = EntityType.loadEntityRecursive(
                 nbt, Minecraft.getInstance().level, e -> e
         );
@@ -677,7 +837,7 @@ public class FamiliarBookScreen extends Screen {
         super.renderBackground(guiGraphics);
         guiGraphics.blit(BOOK_TEXTURE, bookX, bookY, 128, 2, BOOK_WIDTH, BOOK_HEIGHT, 512, 256);
 
-        if (!displayList.isEmpty() && displayList.get(currentPage) instanceof DisplayEntry.Recovering) {
+        if (currentTab == Tab.STORED && !displayList.isEmpty() && displayList.get(currentPage) instanceof DisplayEntry.Recovering) {
             guiGraphics.blit(BOOK_TEXTURE, bookX + 130, bookY,
                     116, 197,
                     11, 34,

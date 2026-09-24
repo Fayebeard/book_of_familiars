@@ -60,5 +60,33 @@ public class ModNetwork {
                 ToggleRevivalPacket::decode,
                 ToggleRevivalPacket::handle
         );
+
+        CHANNEL.registerMessage(id++,
+                RecallFamiliarPacket.class,
+                RecallFamiliarPacket::encode,
+                RecallFamiliarPacket::decode,
+                RecallFamiliarPacket::handle
+        );
+
+        CHANNEL.registerMessage(id++,
+                DeleteTrackedFamiliarPacket.class,
+                DeleteTrackedFamiliarPacket::encode,
+                DeleteTrackedFamiliarPacket::decode,
+                DeleteTrackedFamiliarPacket::handle
+        );
+
+        CHANNEL.registerMessage(id++,
+                ToggleTrackedRevivalPacket.class,
+                ToggleTrackedRevivalPacket::encode,
+                ToggleTrackedRevivalPacket::decode,
+                ToggleTrackedRevivalPacket::handle
+        );
+
+        CHANNEL.registerMessage(id++,
+                RenameTrackedFamiliarPacket.class,
+                RenameTrackedFamiliarPacket::encode,
+                RenameTrackedFamiliarPacket::decode,
+                RenameTrackedFamiliarPacket::handle
+        );
     }
 }

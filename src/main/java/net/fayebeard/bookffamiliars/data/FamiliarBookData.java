@@ -1,13 +1,11 @@
 package net.fayebeard.bookffamiliars.data;
 
-import net.fayebeard.bookffamiliars.BookOfFamiliarsMod;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
 
@@ -133,37 +131,6 @@ public class FamiliarBookData {
 
     public boolean isFull(int maxFamiliars) {
         return familiars.size() + recovering.size() >= maxFamiliars;
-    }
-
-    public List<String> removeUnresolvableEntities(String playerName) {
-        List<String> removed = new ArrayList<>();
-        Iterator<StoredFamiliar> it = familiars.iterator();
-        while (it.hasNext()) {
-            StoredFamiliar f = it.next();
-            boolean exists = ForgeRegistries.ENTITY_TYPES.getValues().stream()
-                    .anyMatch(e -> e.getDescriptionId().equals(f.entityType()));
-            if (!exists) {
-                removed.add(f.displayName());
-                BookOfFamiliarsMod.LOGGER.debug(
-                        "Removed unresolvable familiar '{}' (type: {}) from {}'s book.",
-                        f.displayName(), f.entityType(), playerName);
-                it.remove();
-            }
-        }
-        Iterator<RecoveringFamiliar> rit = recovering.iterator();
-        while (rit.hasNext()) {
-            RecoveringFamiliar r = rit.next();
-            boolean exists = ForgeRegistries.ENTITY_TYPES.getValues().stream()
-                    .anyMatch(e -> e.getDescriptionId().equals(r.entityType()));
-            if (!exists) {
-                removed.add(r.displayName());
-                BookOfFamiliarsMod.LOGGER.debug(
-                        "Removed unresolvable recovering familiar '{}' (type: {}) from {}'s book.",
-                        r.displayName(), r.entityType(), playerName);
-                rit.remove();
-            }
-        }
-        return removed;
     }
 
     public void addFamiliarAt(int index, StoredFamiliar familiar) {

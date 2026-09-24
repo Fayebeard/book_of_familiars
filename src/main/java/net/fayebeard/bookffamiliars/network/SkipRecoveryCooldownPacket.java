@@ -3,13 +3,17 @@ package net.fayebeard.bookffamiliars.network;
 import net.fayebeard.bookffamiliars.Config;
 import net.fayebeard.bookffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookffamiliars.data.RecoveringFamiliar;
+import net.fayebeard.bookffamiliars.data.ReleasedFamiliarTracker;
+import net.fayebeard.bookffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookffamiliars.item.custom.FamiliarBookItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public record SkipRecoveryCooldownPacket(int index) {
@@ -58,10 +62,16 @@ public record SkipRecoveryCooldownPacket(int index) {
 
             FamiliarBookData.save(player, data);
 
+            MinecraftServer server = player.getServer();
+            if (server == null) return;
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
+
             long currentGameTime = player.serverLevel().getGameTime();
             ModNetwork.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> player),
-                    new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime)
+                    new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime)
             );
         });
         ctx.setPacketHandled(true);

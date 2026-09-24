@@ -32,13 +32,13 @@ public class Config
             .comment("Experience levels required to skip the resurrection cooldown.")
             .defineInRange("resurrectionXpCost", 5, 0, 100);
 
-    public static final ForgeConfigSpec.BooleanValue AUTO_REMOVE_INVALID_FAMILIARS = BUILDER
-            .comment("Automatically remove familiars from the book if their mod is no longer installed")
-            .define("autoRemoveInvalidFamiliars", false);
-
     public static final ForgeConfigSpec.BooleanValue ENABLE_RESURRECTION = BUILDER
             .comment("Enable the resurrection system. If disabled, familiars will not return to the book after death")
             .define("enableResurrection", true);
+
+    public static final ForgeConfigSpec.BooleanValue ENABLE_TRACKING = BUILDER
+            .comment("Enable tracking of released familiars in the book.")
+            .define("enableTracking", true);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 }

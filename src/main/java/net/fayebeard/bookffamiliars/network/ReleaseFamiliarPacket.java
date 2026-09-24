@@ -71,7 +71,12 @@ public record ReleaseFamiliarPacket(int index) {
                 UUID entityUUID = entity.getUUID();
                 MinecraftServer server = player.getServer();
                 if (server == null) return;
-                ReleasedFamiliarTracker.get(server.overworld()).track(entityUUID, player.getUUID(), familiar);
+
+                if (Config.ENABLE_TRACKING.get()) {
+                    ReleasedFamiliarTracker.get(server.overworld()).track(entityUUID, player.getUUID(), familiar,
+                            entity.blockPosition(), player.serverLevel().dimension());
+                }
+
                 player.serverLevel().sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
                         50, 0.5, 0.5, 0.5, 0.5);
                 data.removeFamiliar(packet.index);
@@ -92,10 +97,13 @@ public record ReleaseFamiliarPacket(int index) {
                 }
                 FamiliarBookData.save(player, data);
 
+                List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                        ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                        : List.of();
                 long currentGameTime = player.serverLevel().getGameTime();
                 ModNetwork.CHANNEL.send(
                         PacketDistributor.PLAYER.with(() -> player),
-                        new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime)
+                        new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime)
                 );
             }
         });
