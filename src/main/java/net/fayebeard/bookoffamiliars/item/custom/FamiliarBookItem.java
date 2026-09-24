@@ -3,7 +3,9 @@ package net.fayebeard.bookoffamiliars.item.custom;
 import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
+import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
+import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.fayebeard.bookoffamiliars.sounds.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
@@ -13,6 +15,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -20,6 +23,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -34,6 +38,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -66,6 +71,11 @@ public class FamiliarBookItem extends Item {
             return true;
         }
 
+        MinecraftServer server = player.getServer();
+        if (server != null) {
+            ReleasedFamiliarTracker.get(server.overworld()).remove(entity.getUUID());
+        }
+
         String entityType;
         String displayName;
         CompoundTag nbt = new CompoundTag();
@@ -76,6 +86,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            tamableAnimal.stopRiding();
             tamableAnimal.save(nbt);
             entityType = tamableAnimal.getType().getDescriptionId();
             displayName = tamableAnimal.hasCustomName() && tamableAnimal.getCustomName() != null
@@ -89,6 +100,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            horse.stopRiding();
             horse.save(nbt);
             entityType = horse.getType().getDescriptionId();
             displayName = horse.hasCustomName() && horse.getCustomName() != null
@@ -104,6 +116,7 @@ public class FamiliarBookItem extends Item {
                 return false;
             }
 
+            allay.stopRiding();
             allay.save(nbt);
             entityType = allay.getType().getDescriptionId();
             displayName = allay.hasCustomName() && allay.getCustomName() != null
@@ -120,6 +133,15 @@ public class FamiliarBookItem extends Item {
                     || entity instanceof SnowGolem
                     || entity instanceof IronGolem
                     || entity instanceof Strider) {
+            entity.stopRiding();
+            entity.save(nbt);
+            entityType = entity.getType().getDescriptionId();
+            displayName = entity.hasCustomName() && entity.getCustomName() != null
+                    ? entity.getCustomName().getString()
+                    : entity.getType().getDescription().getString();
+
+        } else if (isPettingTamed(entity, player)) {
+            entity.stopRiding();
             entity.save(nbt);
             entityType = entity.getType().getDescriptionId();
             displayName = entity.hasCustomName() && entity.getCustomName() != null
@@ -127,6 +149,7 @@ public class FamiliarBookItem extends Item {
                     : entity.getType().getDescription().getString();
 
         } else if (entity instanceof Fox fox) {
+            fox.stopRiding();
             fox.save(nbt);
             boolean trustsPlayer = false;
             ListTag trustedList = nbt.getList("Trusted", CompoundTag.TAG_INT_ARRAY);
@@ -148,6 +171,13 @@ public class FamiliarBookItem extends Item {
                 ? fox.getCustomName().getString()
                 : fox.getType().getDescription().getString();
 
+        } else if (entity instanceof OwnableEntity ownable && ownable.getOwner() == player) {
+            entity.stopRiding();
+            entity.save(nbt);
+            entityType = entity.getType().getDescriptionId();
+            displayName = entity.hasCustomName() && entity.getCustomName() != null
+                    ? entity.getCustomName().getString()
+                    : entity.getType().getDescription().getString();
         } else {
             return false;
         }
@@ -193,8 +223,12 @@ public class FamiliarBookItem extends Item {
         if (!level.isClientSide()) {
             ServerPlayer serverPlayer = (ServerPlayer) player;
             FamiliarBookData data = serverPlayer.getData(ModAttachments.FAMILIAR_DATA);
+            MinecraftServer server = serverPlayer.getServer();
+            List<TrackedFamiliar> tracked = server != null && Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(serverPlayer.getUUID(), server)
+                    : List.of();
             long currentGameTime = serverPlayer.serverLevel().getGameTime();
-            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime));
+            PacketDistributor.sendToPlayer(serverPlayer, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
             player.playNotifySound(ModSounds.FAMILIAR_BOOK_OPEN.get(), SoundSource.PLAYERS, 0.25f, 1.0f);
         }
         return InteractionResultHolder.success(player.getItemInHand(usedHand));
@@ -213,5 +247,25 @@ public class FamiliarBookItem extends Item {
     @Override
     public int getMaxStackSize(@NotNull ItemStack stack) {
         return 1;
+    }
+
+    private boolean isPettingTamed(Entity entity, Player player) {
+        if (!ModList.get().isLoaded("petting")) return false;
+
+        CompoundTag freshTag = new CompoundTag();
+        entity.save(freshTag);
+
+        if (!freshTag.contains("NeoForgeData")) return false;
+
+        CompoundTag forgeData = freshTag.getCompound("NeoForgeData");
+        if (!forgeData.getBoolean("pettingtamed")) return false;
+        if (!forgeData.contains("ownerUUID")) return false;
+
+        try {
+            UUID ownerUUID = UUID.fromString(forgeData.getString("ownerUUID"));
+            return ownerUUID.equals(player.getUUID());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

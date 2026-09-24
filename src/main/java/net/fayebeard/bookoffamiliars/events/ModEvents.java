@@ -3,17 +3,16 @@ package net.fayebeard.bookoffamiliars.events;
 import net.fayebeard.bookoffamiliars.BookOfFamiliarsMod;
 import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
-import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
-import net.fayebeard.bookoffamiliars.data.PendingRecoveryData;
-import net.fayebeard.bookoffamiliars.data.RecoveringFamiliar;
-import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
+import net.fayebeard.bookoffamiliars.data.*;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -41,19 +40,6 @@ public class ModEvents {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 
-        if (Config.AUTO_REMOVE_INVALID_FAMILIARS.get()) {
-            FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
-            List<String> removed = data.removeUnresolvableEntities(
-                    player.getName().getString());
-            if (!removed.isEmpty()) {
-                for (String name : removed) {
-                    player.sendSystemMessage(Component.translatable(
-                            "bookoffamiliars.familiar_removed_missing_mod", name)
-                            .withStyle(style -> style.withColor(0xFF5555)));
-                }
-            }
-        }
-
         PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
         if (!pending.hasPending(player.getUUID())) return;
 
@@ -76,7 +62,6 @@ public class ModEvents {
     @SubscribeEvent
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
-        if (!Config.ENABLE_RESURRECTION.get()) return;
 
         MinecraftServer server = event.getEntity().getServer();
         if (server == null) return;
@@ -89,12 +74,29 @@ public class ModEvents {
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
         tracker.remove(entityUUID);
 
+        if (!Config.ENABLE_RESURRECTION.get()) return;
         if (!entry.snapshot().revival()) return;
 
         long cooldownTicks = (long) Config.RESURRECTION_COOLDOWN_MINUTES.get() * 60L * 20L;
         long recoverAt = event.getEntity().level().getGameTime() + cooldownTicks;
 
-        RecoveringFamiliar rf = RecoveringFamiliar.from(entry.snapshot(), entityUUID, recoverAt);
+        CompoundTag freshNbt = new CompoundTag();
+        event.getEntity().save(freshNbt);
+
+        RecoveringFamiliar rf = new RecoveringFamiliar(
+                freshNbt,
+                entry.snapshot().entityType(),
+                entry.snapshot().displayName(),
+                entry.snapshot().currentHealth(),
+                entry.snapshot().maxHealth(),
+                entry.snapshot().speed(),
+                entry.snapshot().attackDamage(),
+                entry.snapshot().hasAttackDamage(),
+                entry.snapshot().itemCount(),
+                entityUUID,
+                recoverAt,
+                entry.snapshot().revival()
+        );
 
         ServerPlayer player = server.getPlayerList().getPlayer(entry.playerUUID());
         if (player != null) {
@@ -153,8 +155,9 @@ public class ModEvents {
             }
 
             if (changed) {
+                List<TrackedFamiliar> tracked = ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server);
                 PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(
-                        data.getFamiliars(), data.getRecovering(), currentGameTime));
+                        data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
             }
         }
     }
@@ -162,5 +165,24 @@ public class ModEvents {
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         tickCounter = 0;
+    }
+
+    @SubscribeEvent
+    public static void onFamiliarDrops(LivingDropsEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!Config.ENABLE_RESURRECTION.get()) return;
+
+        MinecraftServer server = event.getEntity().getServer();
+        if (server == null) return;
+
+        UUID entityUUID = event.getEntity().getUUID();
+        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+
+        if (!tracker.isTracked(entityUUID)) return;
+
+        ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
+        if (!entry.snapshot().revival()) return;
+
+        event.setCanceled(true);
     }
 }

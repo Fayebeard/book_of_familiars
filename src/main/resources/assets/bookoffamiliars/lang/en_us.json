@@ -20,6 +20,9 @@
   "bookoffamiliars.configuration.enableResurrection": "Enable Resurrection",
   "bookoffamiliars.configuration.enableResurrection.tooltip": "Enable the resurrection system. If disabled, familiars will not return to the book after death",
 
+  "bookoffamiliars.configuration.enableTracking": "Enable Tracking",
+  "bookoffamiliars.configuration.enableTracking.tooltip": "Enable tracking of released familiars in the book.",
+
   "item.bookoffamiliars.familiar_book": "Familiar Book",
 
   "itemGroup.bookoffamiliars.familiar_book_tab": "Book of Familiars",
@@ -59,5 +62,12 @@
   "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book.",
   "bookoffamiliars.revival_confirm_line1": "Are you sure?",
   "bookoffamiliars.revival_confirm_disable": "This familiar will no longer be revived after death.",
-  "bookoffamiliars.revival_confirm_enable": "This familiar will be revived after death."
+  "bookoffamiliars.revival_confirm_enable": "This familiar will be revived after death.",
+  "bookoffamiliars.recall_button": "Recall",
+  "bookoffamiliars.no_familiars_released": "No familiars released.",
+  "bookoffamiliars.stats_unavailable_released": "Stats\nunavailable\nwhile\nreleased.",
+  "bookoffamiliars.familiar_not_found": "Your familiar could not be located. Try again when they are in a loaded area.",
+  "bookoffamiliars.last_known_location": "%s, %s, %s",
+  "bookoffamiliars.last_known_dimension": "%s",
+  "bookoffamiliars.familiar_deleted_world": "Familiar removed from tracking. If they were out of loaded range, they may still exist in the world."
 }

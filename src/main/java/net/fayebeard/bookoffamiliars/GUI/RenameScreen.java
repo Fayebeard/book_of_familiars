@@ -12,6 +12,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 @OnlyIn(Dist.CLIENT)
 public class RenameScreen extends Screen {
 
@@ -20,6 +22,7 @@ public class RenameScreen extends Screen {
     private final boolean isRecovering;
     private final String currentName;
     private EditBox renameField;
+    private final Consumer<String> onConfirm;
 
     public RenameScreen(FamiliarBookScreen parentScreen, int familiarIndex, boolean isRecovering, String currentName) {
         super(Component.literal(""));
@@ -27,6 +30,16 @@ public class RenameScreen extends Screen {
         this.familiarIndex = familiarIndex;
         this.isRecovering = isRecovering;
         this.currentName = currentName;
+        this.onConfirm = null;
+    }
+
+    public RenameScreen(FamiliarBookScreen parentScreen, String currentName, Consumer<String> onConfirm) {
+        super(Component.literal(""));
+        this.parentScreen = parentScreen;
+        this.familiarIndex = -1;
+        this.isRecovering = false;
+        this.currentName = currentName;
+        this.onConfirm = onConfirm;
     }
 
     @Override
@@ -46,7 +59,11 @@ public class RenameScreen extends Screen {
     }
 
     private void confirmRename() {
-        PacketDistributor.sendToServer(new RenameFamiliarPacket(familiarIndex, renameField.getValue(), isRecovering));
+        if (onConfirm != null) {
+            onConfirm.accept(renameField.getValue());
+        } else {
+            PacketDistributor.sendToServer(new RenameFamiliarPacket(familiarIndex, renameField.getValue(), isRecovering));
+        }
         Minecraft.getInstance().setScreen(parentScreen);
     }
 

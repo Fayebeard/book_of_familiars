@@ -1,18 +1,24 @@
 package net.fayebeard.bookoffamiliars.network;
 
 import io.netty.buffer.ByteBuf;
+import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
+import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
+import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public record RenameFamiliarPacket(int index, String name, boolean isRecovering) implements CustomPacketPayload {
 
@@ -61,8 +67,14 @@ public record RenameFamiliarPacket(int index, String name, boolean isRecovering)
                 }
                 data.renameFamiliar(index, name, player.registryAccess());
             }
+            MinecraftServer server = player.getServer();
+            if (server == null) return;
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
+
             long currentGameTime = player.serverLevel().getGameTime();
-            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime));
+            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         });
     }
 }
