@@ -66,8 +66,12 @@ public record DeleteFamiliarPacket(int index, boolean isRecovering) {
 
         FamiliarBookData.save(player, data);
 
+        List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                : List.of();
+
         long currentGameTime = player.level().getGameTime();
-        ModNetwork.CHANNEL.send(new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), currentGameTime),
+        ModNetwork.CHANNEL.send(new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime),
                 PacketDistributor.PLAYER.with(player));
     }
 }

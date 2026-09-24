@@ -2,6 +2,7 @@ package net.fayebeard.bookoffamiliars.network;
 
 import net.fayebeard.bookoffamiliars.data.RecoveringFamiliar;
 import net.fayebeard.bookoffamiliars.data.StoredFamiliar;
+import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +13,11 @@ import net.minecraftforge.fml.DistExecutor;
 import java.util.ArrayList;
 import java.util.List;
 
-public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars, List<RecoveringFamiliar> recovering, long currentGameTime) {
+public record OpenFamiliarBookPacket(
+        List<StoredFamiliar> familiars,
+        List<RecoveringFamiliar> recovering,
+        List<TrackedFamiliar> tracked,
+        long currentGameTime) {
 
     public static void encode(OpenFamiliarBookPacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.familiars.size());
@@ -24,6 +29,12 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars, List<Recove
         buf.writeInt(packet.recovering.size());
         for (RecoveringFamiliar familiar : packet.recovering) {
             RecoveringFamiliar.CODEC.encodeStart(NbtOps.INSTANCE, familiar)
+                    .result()
+                    .ifPresent(buf::writeNbt);
+        }
+        buf.writeInt(packet.tracked.size());
+        for (TrackedFamiliar familiar : packet.tracked) {
+            TrackedFamiliar.CODEC.encodeStart(NbtOps.INSTANCE, familiar)
                     .result()
                     .ifPresent(buf::writeNbt);
         }
@@ -48,7 +59,16 @@ public record OpenFamiliarBookPacket(List<StoredFamiliar> familiars, List<Recove
                     .result()
                     .ifPresent(recoveringList::add);
         }
-        return new OpenFamiliarBookPacket(familiarList, recoveringList, buf.readLong());
+
+        int trackedSize = buf.readInt();
+        List<TrackedFamiliar> trackedList = new ArrayList<>();
+        for (int i = 0; i < trackedSize; i++) {
+            CompoundTag tag = buf.readNbt();
+            TrackedFamiliar.CODEC.parse(NbtOps.INSTANCE, tag)
+                    .result()
+                    .ifPresent(trackedList::add);
+        }
+        return new OpenFamiliarBookPacket(familiarList, recoveringList, trackedList, buf.readLong());
     }
 
     @SuppressWarnings("unused")

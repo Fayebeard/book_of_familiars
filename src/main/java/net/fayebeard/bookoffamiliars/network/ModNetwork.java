@@ -49,5 +49,29 @@ public class ModNetwork {
                 .decoder(ToggleRevivalPacket::decode)
                 .consumerMainThread(ToggleRevivalPacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(DeleteTrackedFamiliarPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(DeleteTrackedFamiliarPacket::encode)
+                .decoder(DeleteTrackedFamiliarPacket::decode)
+                .consumerMainThread(DeleteTrackedFamiliarPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(RecallFamiliarPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(RecallFamiliarPacket::encode)
+                .decoder(RecallFamiliarPacket::decode)
+                .consumerMainThread(RecallFamiliarPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(RenameTrackedFamiliarPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(RenameTrackedFamiliarPacket::encode)
+                .decoder(RenameTrackedFamiliarPacket::decode)
+                .consumerMainThread(RenameTrackedFamiliarPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ToggleTrackedRevivalPacket.class, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ToggleTrackedRevivalPacket::encode)
+                .decoder(ToggleTrackedRevivalPacket::decode)
+                .consumerMainThread(ToggleTrackedRevivalPacket::handle)
+                .add();
     }
 }

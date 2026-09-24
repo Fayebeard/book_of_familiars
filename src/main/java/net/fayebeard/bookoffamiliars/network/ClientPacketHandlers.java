@@ -10,9 +10,9 @@ public class ClientPacketHandlers {
     public static void handleOpenFamiliarBook(OpenFamiliarBookPacket packet) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof FamiliarBookScreen existingScreen) {
-            existingScreen.refresh(packet.familiars(), packet.recovering(), packet.currentGameTime());
+            existingScreen.refresh(packet.familiars(), packet.recovering(), packet.tracked(), packet.currentGameTime());
         } else {
-            mc.setScreen(new FamiliarBookScreen(packet.familiars(), packet.recovering(), packet.currentGameTime()));
+            mc.setScreen(new FamiliarBookScreen(packet.familiars(), packet.recovering(), packet.tracked(), packet.currentGameTime()));
         }
     }
 }

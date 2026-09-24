@@ -13,6 +13,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 @OnlyIn(Dist.CLIENT)
 public class RenameScreen extends Screen {
 
@@ -21,6 +23,7 @@ public class RenameScreen extends Screen {
     private final boolean isRecovering;
     private final String currentName;
     private EditBox renameField;
+    private final Consumer<String> onConfirm;
 
     public RenameScreen(FamiliarBookScreen parentScreen, int familiarIndex, boolean isRecovering, String currentName) {
         super(Component.literal(""));
@@ -28,6 +31,16 @@ public class RenameScreen extends Screen {
         this.familiarIndex = familiarIndex;
         this.isRecovering = isRecovering;
         this.currentName = currentName;
+        this.onConfirm = null;
+    }
+
+    public RenameScreen(FamiliarBookScreen parentScreen, String currentName, Consumer<String> onConfirm) {
+        super(Component.literal(""));
+        this.parentScreen = parentScreen;
+        this.familiarIndex = -1;
+        this.isRecovering = false;
+        this.currentName = currentName;
+        this.onConfirm = onConfirm;
     }
 
     @Override
@@ -47,9 +60,13 @@ public class RenameScreen extends Screen {
     }
 
     public void confirmRename() {
-        ModNetwork.CHANNEL.send(
-                new RenameFamiliarPacket(familiarIndex, renameField.getValue(), isRecovering),
-                PacketDistributor.SERVER.noArg());
+        if (onConfirm != null) {
+            onConfirm.accept(renameField.getValue());
+        } else {
+            ModNetwork.CHANNEL.send(
+                    new RenameFamiliarPacket(familiarIndex, renameField.getValue(), isRecovering),
+                    PacketDistributor.SERVER.noArg());
+        }
         Minecraft.getInstance().setScreen(parentScreen);
     }
 
