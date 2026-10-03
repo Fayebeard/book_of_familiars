@@ -86,6 +86,10 @@ public class ModEvents {
         event.getEntity().save(output);
         freshNbt = output.buildResult();
 
+        freshNbt.putFloat("Health", event.getEntity().getMaxHealth());
+        freshNbt.remove("DeathTime");
+        freshNbt.remove("HurtTime");
+
         RecoveringFamiliar rf = new RecoveringFamiliar(
                 freshNbt,
                 entry.snapshot().entityType(),
