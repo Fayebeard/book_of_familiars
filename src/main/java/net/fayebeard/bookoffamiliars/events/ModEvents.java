@@ -84,6 +84,10 @@ public class ModEvents {
         CompoundTag freshNbt = new CompoundTag();
         event.getEntity().save(freshNbt);
 
+        freshNbt.putFloat("Health", event.getEntity().getMaxHealth());
+        freshNbt.remove("DeathTime");
+        freshNbt.remove("HurtTime");
+
         RecoveringFamiliar rf = new RecoveringFamiliar(
                 freshNbt,
                 entry.snapshot().entityType(),
