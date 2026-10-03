@@ -95,7 +95,7 @@ public record RecallFamiliarPacket(UUID familiarUUID) {
             }
 
             StoredFamiliar oldSnapshot = entry.snapshot();
-            StoredFamiliar recalled = new StoredFamiliar(nbt, oldSnapshot.entityType(), oldSnapshot. displayName(),
+            StoredFamiliar recalled = new StoredFamiliar(nbt, oldSnapshot.entityType(), oldSnapshot.displayName(),
                     currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount,
                     oldSnapshot.revival());
 

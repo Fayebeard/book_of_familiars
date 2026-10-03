@@ -6,6 +6,7 @@ import net.fayebeard.bookffamiliars.data.*;
 import net.fayebeard.bookffamiliars.network.ModNetwork;
 import net.fayebeard.bookffamiliars.network.OpenFamiliarBookPacket;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -84,8 +85,21 @@ public class ModEvents {
         CompoundTag freshNbt = new CompoundTag();
         event.getEntity().save(freshNbt);
 
+        CompoundTag nbt = entry.snapshot().nbt().copy();
+        if (freshNbt.contains("Items")) {
+            nbt.put("Items", freshNbt.getList("Items", Tag.TAG_COMPOUND));
+        } else {
+            nbt.remove("Items");
+        }
+        if (freshNbt.contains("ArmorItems")) {
+            nbt.put("ArmorItems", freshNbt.getList("ArmorItems", Tag.TAG_COMPOUND));
+        }
+        if (freshNbt.contains("HandItems")) {
+            nbt.put("HandItems", freshNbt.getList("HandItems", Tag.TAG_COMPOUND));
+        }
+
         RecoveringFamiliar rf = new RecoveringFamiliar(
-                freshNbt,
+                nbt,
                 entry.snapshot().entityType(),
                 entry.snapshot().displayName(),
                 entry.snapshot().currentHealth(),
