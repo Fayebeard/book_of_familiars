@@ -86,12 +86,21 @@ public class ModEvents {
         event.getEntity().save(output);
         freshNbt = output.buildResult();
 
-        freshNbt.putFloat("Health", event.getEntity().getMaxHealth());
-        freshNbt.remove("DeathTime");
-        freshNbt.remove("HurtTime");
+        CompoundTag nbt = entry.snapshot().nbt().copy();
+        if (freshNbt.contains("Items")) {
+            nbt.put("Items", freshNbt.getListOrEmpty("Items"));
+        } else {
+            nbt.remove("Items");
+        }
+        if (freshNbt.contains("ArmorItems")) {
+            nbt.put("ArmorItems", freshNbt.getListOrEmpty("ArmorItems"));
+        }
+        if (freshNbt.contains("HandItems")) {
+            nbt.put("HandItems", freshNbt.getListOrEmpty("HandItems"));
+        }
 
         RecoveringFamiliar rf = new RecoveringFamiliar(
-                freshNbt,
+                nbt,
                 entry.snapshot().entityType(),
                 entry.snapshot().displayName(),
                 entry.snapshot().currentHealth(),
