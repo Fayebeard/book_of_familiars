@@ -19,13 +19,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = BookOfFamiliarsMod.MOD_ID)
 public class ModEvents {
 
     private static int tickCounter = 0;
+
+    private static final Set<UUID> recentlyRevivedDeaths = new HashSet<>();
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
@@ -81,6 +85,8 @@ public class ModEvents {
 
         long cooldownTicks = (long) Config.RESURRECTION_COOLDOWN_MINUTES.get() * 60L * 20L;
         long recoverAt = event.getEntity().level().getGameTime() + cooldownTicks;
+
+        recentlyRevivedDeaths.add(entityUUID);
 
         CompoundTag freshNbt = new CompoundTag();
         event.getEntity().save(freshNbt);
@@ -184,24 +190,16 @@ public class ModEvents {
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         tickCounter = 0;
+        recentlyRevivedDeaths.clear();
     }
 
     @SubscribeEvent
     public static void onFamiliarDrops(LivingDropsEvent event) {
         if (event.getEntity().level().isClientSide()) return;
-        if (!Config.ENABLE_RESURRECTION.get()) return;
-
-        MinecraftServer server = event.getEntity().getServer();
-        if (server == null) return;
 
         UUID entityUUID = event.getEntity().getUUID();
-        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
-
-        if (!tracker.isTracked(entityUUID)) return;
-
-        ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
-        if (!entry.snapshot().revival()) return;
-
-        event.setCanceled(true);
+        if (recentlyRevivedDeaths.remove(entityUUID)) {
+            event.setCanceled(true);
+        }
     }
 }
