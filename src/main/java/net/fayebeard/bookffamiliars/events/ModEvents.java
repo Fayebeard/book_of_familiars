@@ -99,9 +99,23 @@ public class ModEvents {
         }
         if (freshNbt.contains("ArmorItems")) {
             nbt.put("ArmorItems", freshNbt.getList("ArmorItems", Tag.TAG_COMPOUND));
+        } else {
+            nbt.remove("ArmorItems");
         }
         if (freshNbt.contains("HandItems")) {
             nbt.put("HandItems", freshNbt.getList("HandItems", Tag.TAG_COMPOUND));
+        } else {
+            nbt.remove("HandItems");
+        }
+        if (freshNbt.contains("SaddleItem")) {
+            nbt.put("SaddleItem", freshNbt.getCompound("SaddleItem"));
+        } else {
+            nbt.remove("SaddleItem");
+        }
+        if (freshNbt.contains("body_armor_item")) {
+            nbt.put("body_armor_item", freshNbt.getCompound("body_armor_item"));
+        } else {
+            nbt.remove("body_armor_item");
         }
 
         RecoveringFamiliar rf = new RecoveringFamiliar(
