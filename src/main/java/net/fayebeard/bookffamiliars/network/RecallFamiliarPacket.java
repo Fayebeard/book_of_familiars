@@ -54,8 +54,8 @@ public record RecallFamiliarPacket(UUID familiarUUID) {
             FamiliarBookData data = FamiliarBookData.get(player);
             int max = Config.MAX_FAMILIARS.get();
             if (data.isFull(max)) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.book_full", max)
-                        .withStyle(style -> style.withColor(0xFF5555)));
+                player.displayClientMessage(Component.translatable("bookoffamiliars.book_full", max)
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
                 return;
             }
 
@@ -69,8 +69,8 @@ public record RecallFamiliarPacket(UUID familiarUUID) {
             }
 
             if (found == null) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_not_found")
-                        .withStyle(style -> style.withColor(0xFF5555)));
+                player.displayClientMessage(Component.translatable("bookoffamiliars.familiar_not_found")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
                 return;
             }
 
@@ -99,8 +99,9 @@ public record RecallFamiliarPacket(UUID familiarUUID) {
                     currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount,
                     oldSnapshot.revival());
 
-            found.discard();
+            found.stopRiding();
             tracker.remove(packet.familiarUUID());
+            found.discard();
             data.addFamiliar(recalled);
 
             player.playNotifySound(ModSounds.FAMILIAR_STORE.get(), SoundSource.PLAYERS, 0.25f, 1.0f);

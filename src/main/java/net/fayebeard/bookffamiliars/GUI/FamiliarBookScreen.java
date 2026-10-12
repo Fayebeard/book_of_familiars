@@ -48,7 +48,7 @@ public class FamiliarBookScreen extends Screen {
     private Entity currentClientEntity = null;
     private int currentPage = 0;
     private String searchQuery = "";
-    private final List<DisplayEntry> dropdownResults = new ArrayList<>();
+    private final List<Integer> dropdownResults = new ArrayList<>();
     private boolean showDropdown = false;
     private int dropdownScrollOffset = 0;
 
@@ -285,7 +285,7 @@ public class FamiliarBookScreen extends Screen {
                         TrackedFamiliar tf = tracked.get(trackedPage);
                         Minecraft.getInstance().setScreen(new ConfirmScreen(
                                 this,
-                                Component.translatable("bookoffamiliars.delete_confirm_line1"),
+                                Component.translatable("bookoffamiliars.confirm_line1"),
                                 Component.translatable("bookoffamiliars.delete_confirm_line2", tf.snapshot().displayName()),
                                 () -> ModNetwork.CHANNEL.sendToServer(new DeleteTrackedFamiliarPacket(tf.familiarUUID()))));
                     } else if (currentTab == Tab.STORED && !displayList.isEmpty()) {
@@ -293,16 +293,9 @@ public class FamiliarBookScreen extends Screen {
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
                             Minecraft.getInstance().setScreen(new ConfirmScreen(
                                     this,
-                                    Component.translatable("bookoffamiliars.delete_confirm_line1"),
-                                    Component.translatable("bookoffamiliars.delete_confirm_line2", a.familiar().displayName()),
-                                    () -> ModNetwork.CHANNEL.sendToServer(new DeleteFamiliarPacket(a.familiarIndex(), false))
-                            ));
-                        } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering r) {
-                            Minecraft.getInstance().setScreen(new ConfirmScreen(
-                                    this,
-                                    Component.translatable("bookoffamiliars.delete_confirm_line1"),
-                                    Component.translatable("bookoffamiliars.delete_confirm_line2", r.familiar().displayName()),
-                                    () -> ModNetwork.CHANNEL.sendToServer(new DeleteFamiliarPacket(r.recoveringIndex(), true))
+                                    Component.translatable("bookoffamiliars.confirm_line1"),
+                                    Component.translatable("bookoffamiliars.delete_confirm_line2_release", a.familiar().displayName()),
+                                    () -> ModNetwork.CHANNEL.sendToServer(new DeleteFamiliarPacket(a.familiarIndex()))
                             ));
                         }
                     }
@@ -321,7 +314,7 @@ public class FamiliarBookScreen extends Screen {
                         TrackedFamiliar tf = tracked.get(trackedPage);
                         Minecraft.getInstance().setScreen(new ConfirmScreen(
                                 this,
-                                Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                Component.translatable("bookoffamiliars.confirm_line1"),
                                 Component.translatable(tf.snapshot().revival()
                                         ? "bookoffamiliars.revival_confirm_disable"
                                         : "bookoffamiliars.revival_confirm_enable"),
@@ -330,7 +323,7 @@ public class FamiliarBookScreen extends Screen {
                         if (displayList.get(currentPage) instanceof DisplayEntry.Active a) {
                             Minecraft.getInstance().setScreen(new ConfirmScreen(
                                     this,
-                                    Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                    Component.translatable("bookoffamiliars.confirm_line1"),
                                     Component.translatable(a.familiar().revival()
                                             ? "bookoffamiliars.revival_confirm_disable"
                                             : "bookoffamiliars.revival_confirm_enable"),
@@ -339,7 +332,7 @@ public class FamiliarBookScreen extends Screen {
                         } else if (displayList.get(currentPage) instanceof DisplayEntry.Recovering r) {
                             Minecraft.getInstance().setScreen(new ConfirmScreen(
                                     this,
-                                    Component.translatable("bookoffamiliars.revival_confirm_line1"),
+                                    Component.translatable("bookoffamiliars.confirm_line1"),
                                     Component.translatable(r.familiar().revival()
                                             ? "bookoffamiliars.revival_confirm_disable"
                                             : "bookoffamiliars.revival_confirm_enable"),
@@ -395,6 +388,34 @@ public class FamiliarBookScreen extends Screen {
         updateButtonStates();
     }
 
+    private String entryName(int index) {
+        if (currentTab == Tab.TRACKED) {
+            return tracked.get(index).snapshot().displayName();
+        }
+        DisplayEntry entry = displayList.get(index);
+        if (entry instanceof DisplayEntry.Active a) {
+            return a.familiar().displayName();
+        }
+        if (entry instanceof DisplayEntry.Recovering r) {
+            return r.familiar().displayName();
+        }
+        return "";
+    }
+
+    private String entryType(int index) {
+        if (currentTab == Tab.TRACKED) {
+            return Component.translatable(tracked.get(index).snapshot().entityType()).getString();
+        }
+        DisplayEntry entry = displayList.get(index);
+        if (entry instanceof DisplayEntry.Active a) {
+            return Component.translatable(a.familiar().entityType()).getString();
+        }
+        if (entry instanceof DisplayEntry.Recovering r) {
+            return Component.translatable(r.familiar().entityType()).getString();
+        }
+        return "";
+    }
+
     private void updateDropdown() {
         dropdownResults.clear();
         dropdownScrollOffset = 0;
@@ -405,21 +426,11 @@ public class FamiliarBookScreen extends Screen {
         }
 
         String query = searchQuery.toLowerCase();
-        for (DisplayEntry entry : displayList) {
-            String name;
-            String type;
-            if (entry instanceof DisplayEntry.Active a) {
-                name = a.familiar().displayName();
-                type = Component.translatable(a.familiar().entityType()).getString();
-            } else if (entry instanceof DisplayEntry.Recovering r) {
-                name = r.familiar().displayName();
-                type = Component.translatable(r.familiar().entityType()).getString();
-            } else {
-                name = "";
-                type = "";
-            }
-            if (name.toLowerCase().contains(query) || type.toLowerCase().contains(query)) {
-                dropdownResults.add(entry);
+        int count = currentTab == Tab.TRACKED ? tracked.size() : displayList.size();
+        for (int i = 0; i < count; i++) {
+            if (entryName(i).toLowerCase().contains(query)
+                || entryType(i).toLowerCase().contains(query)) {
+                dropdownResults.add(i);
             }
         }
         showDropdown = !dropdownResults.isEmpty();
@@ -443,7 +454,7 @@ public class FamiliarBookScreen extends Screen {
             recallButton.visible = false;
             renameButton.visible = hasEntries;
             searchField.visible = hasEntries;
-            deleteButton.visible = hasEntries;
+            deleteButton.visible = hasEntries && !isRecovering;
             skipCooldownButton.visible = isRecovering;
             revivalButton.visible = hasEntries && Config.ENABLE_RESURRECTION.get();
 
@@ -467,7 +478,7 @@ public class FamiliarBookScreen extends Screen {
             renameButton.visible = hasTracked;
             deleteButton.visible = hasTracked;
             revivalButton.visible = hasTracked && Config.ENABLE_RESURRECTION.get();
-            searchField.visible = false;
+            searchField.visible = hasTracked;
 
             if (hasTracked && Config.ENABLE_RESURRECTION.get()) {
                 revivalButton.setActive(tracked.get(trackedPage).snapshot().revival());
@@ -508,9 +519,6 @@ public class FamiliarBookScreen extends Screen {
                     renderRecoveringFamiliar(guiGraphics, r.familiar(), mouseX, mouseY);
                 }
             }
-            if (showDropdown) {
-                renderDropdown(guiGraphics, mouseX, mouseY);
-            }
         } else {
             if (tracked.isEmpty()) {
                 guiGraphics.drawString(this.font, NO_TRACKED,
@@ -518,6 +526,9 @@ public class FamiliarBookScreen extends Screen {
             } else {
                 renderTrackedFamiliar(guiGraphics, tracked.get(trackedPage), mouseX, mouseY);
             }
+        }
+        if (showDropdown) {
+            renderDropdown(guiGraphics, mouseX, mouseY);
         }
     }
 
@@ -676,15 +687,7 @@ public class FamiliarBookScreen extends Screen {
                 guiGraphics.fill(dropX, entryY, dropX + dropW, entryY + DROPDOWN_ENTRY_HEIGHT, 0xFFd4c8b0);
             }
 
-            String fullName;
-            DisplayEntry result = dropdownResults.get(resultIndex);
-            if (result instanceof DisplayEntry.Active a) {
-                fullName = a.familiar().displayName();
-            } else if (result instanceof DisplayEntry.Recovering r) {
-                fullName = r.familiar().displayName();
-            } else {
-                fullName = "";
-            }
+            String fullName = entryName(dropdownResults.get(resultIndex));
             String name = fullName;
             while (this.font.width(name) > dropW - 4 && !name.isEmpty())
                 name = name.substring(0, name.length() - 1);
@@ -718,12 +721,16 @@ public class FamiliarBookScreen extends Screen {
                 int entryY = dropY + 2 + i * DROPDOWN_ENTRY_HEIGHT;
                 if (mouseX >= dropX && mouseX <= dropX + dropW
                         && mouseY >= entryY && mouseY < entryY + DROPDOWN_ENTRY_HEIGHT) {
-                    int targetPage = displayList.indexOf(dropdownResults.get(i + dropdownScrollOffset));
-                    if (targetPage >= 0) {
+                    int targetPage = dropdownResults.get(i + dropdownScrollOffset);
+                    if (currentTab == Tab.TRACKED) {
+                        trackedPage = targetPage;
+                        savedTrackedPage = trackedPage;
+                    } else {
                         currentPage = targetPage;
-                        discardClientEntity();
-                        updateButtonStates();
+                        savedPage = currentPage;
                     }
+                    discardClientEntity();
+                    updateButtonStates();
                     searchField.setValue("");
                     searchQuery = "";
                     showDropdown = false;

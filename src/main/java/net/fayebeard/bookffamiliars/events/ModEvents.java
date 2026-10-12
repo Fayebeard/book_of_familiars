@@ -6,6 +6,7 @@ import net.fayebeard.bookffamiliars.data.*;
 import net.fayebeard.bookffamiliars.network.ModNetwork;
 import net.fayebeard.bookffamiliars.network.OpenFamiliarBookPacket;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -15,6 +16,7 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -65,7 +67,7 @@ public class ModEvents {
         FamiliarBookData.save(player, data);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
@@ -73,8 +75,9 @@ public class ModEvents {
         if (server == null) return;
 
         UUID entityUUID = event.getEntity().getUUID();
-        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+        recentlyRevivedDeaths.remove(entityUUID);
 
+        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
         if (!tracker.isTracked(entityUUID)) return;
 
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
@@ -117,6 +120,8 @@ public class ModEvents {
         } else {
             nbt.remove("body_armor_item");
         }
+
+        copyBaseAttributes(freshNbt, nbt);
 
         RecoveringFamiliar rf = new RecoveringFamiliar(
                 nbt,
@@ -215,5 +220,35 @@ public class ModEvents {
         if (recentlyRevivedDeaths.remove(entityUUID)) {
             event.setCanceled(true);
         }
+    }
+
+    private static void copyBaseAttributes(CompoundTag from, CompoundTag to) {
+        if (!from.contains("Attributes")) return;
+        ListTag fromList = from.getList("Attributes", Tag.TAG_COMPOUND);
+        ListTag toList = to.getList("Attributes", Tag.TAG_COMPOUND);
+
+        for (int i = 0; i < fromList.size(); i++) {
+            CompoundTag fromAttr = fromList.getCompound(i);
+            String name = fromAttr.getString("Name");
+            if (name.isEmpty() || !fromAttr.contains("Base")) continue;
+            double base = fromAttr.getDouble("Base");
+
+            boolean found = false;
+            for (int j = 0; j < toList.size(); j++) {
+                CompoundTag toAttr = toList.getCompound(j);
+                if (toAttr.getString("Name").equals(name)) {
+                    toAttr.putDouble("Base", base);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                CompoundTag newAttr = new CompoundTag();
+                newAttr.putString("Name", name);
+                newAttr.putDouble("Base", base);
+                toList.add(newAttr);
+            }
+        }
+        to.put("Attributes", toList);
     }
 }
