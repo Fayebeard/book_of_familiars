@@ -1,15 +1,13 @@
 package net.fayebeard.bookoffamiliars.network;
 
+import net.fayebeard.bookoffamiliars.Config;
 import net.fayebeard.bookoffamiliars.data.FamiliarBookData;
 import net.fayebeard.bookoffamiliars.data.ReleasedFamiliarTracker;
 import net.fayebeard.bookoffamiliars.data.TrackedFamiliar;
 import net.fayebeard.bookoffamiliars.item.custom.FamiliarBookItem;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.network.CustomPayloadEvent;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -41,27 +39,13 @@ public record DeleteTrackedFamiliarPacket(UUID familiarUUID) {
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(packet.familiarUUID());
         if (entry == null || !entry.playerUUID().equals(player.getUUID())) return;
 
-        Entity found = null;
-        for (ServerLevel level : server.getAllLevels()) {
-            Entity candidate = level.getEntity(packet.familiarUUID());
-            if (candidate != null) {
-                found = candidate;
-                break;
-            }
-        }
-
-        if (found != null) {
-            found.discard();
-        }
-
         tracker.remove(packet.familiarUUID());
-        player.sendSystemMessage(Component.translatable(
-                "bookoffamiliars.familiar_deleted_world")
-                .withStyle(style -> style.withColor(0xFF5555)));
 
         FamiliarBookData data = FamiliarBookData.get(player);
         long currentGameTime = player.level().getGameTime();
-        List<TrackedFamiliar> tracked = tracker.getEntriesForPlayer(player.getUUID(), server);
+        List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                ? tracker.getEntriesForPlayer(player.getUUID(), server)
+                : List.of();
         ModNetwork.CHANNEL.send(new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime),
                 PacketDistributor.PLAYER.with(player));
     }

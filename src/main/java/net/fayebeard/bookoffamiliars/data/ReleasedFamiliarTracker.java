@@ -78,9 +78,12 @@ public class ReleasedFamiliarTracker extends SavedData {
             CompoundTag entry = (CompoundTag) tag;
             UUID entityUUID = entry.getUUID("EntityUUID");
             UUID playerUUID = entry.getUUID("PlayerUUID");
-            BlockPos position = BlockPos.of(entry.getLong("Position"));
-            ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
-                    ResourceLocation.parse(entry.getString("Dimension")));
+            BlockPos position = entry.contains("Position")
+                    ? BlockPos.of(entry.getLong("Position"))
+                    : BlockPos.ZERO;
+            ResourceKey<Level> dimension = entry.contains("Dimension")
+                    ? ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(entry.getString("Dimension")))
+                    : Level.OVERWORLD;
             StoredFamiliar.CODEC.parse(NbtOps.INSTANCE, entry.get("Snapshot"))
                     .ifSuccess(snapshot ->
                             tracker.releasedMap.put(entityUUID, new ReleasedEntry(playerUUID, snapshot, position, dimension)));

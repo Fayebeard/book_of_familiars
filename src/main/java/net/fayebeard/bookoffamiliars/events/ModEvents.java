@@ -6,6 +6,7 @@ import net.fayebeard.bookoffamiliars.data.*;
 import net.fayebeard.bookoffamiliars.network.ModNetwork;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -15,17 +16,22 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = BookOfFamiliarsMod.MOD_ID)
 public class ModEvents {
 
     private static int tickCounter = 0;
+
+    private static final Set<UUID> recentlyRevivedDeaths = new HashSet<>();
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
@@ -61,7 +67,7 @@ public class ModEvents {
         FamiliarBookData.save(player, data);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
@@ -69,8 +75,9 @@ public class ModEvents {
         if (server == null) return;
 
         UUID entityUUID = event.getEntity().getUUID();
-        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+        recentlyRevivedDeaths.remove(entityUUID);
 
+        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
         if (!tracker.isTracked(entityUUID)) return;
 
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
@@ -81,6 +88,8 @@ public class ModEvents {
 
         long cooldownTicks = (long) Config.RESURRECTION_COOLDOWN_MINUTES.get() * 60L * 20L;
         long recoverAt = event.getEntity().level().getGameTime() + cooldownTicks;
+
+        recentlyRevivedDeaths.add(entityUUID);
 
         CompoundTag freshNbt = new CompoundTag();
         event.getEntity().save(freshNbt);
@@ -111,6 +120,8 @@ public class ModEvents {
         } else {
             nbt.remove("body_armor_item");
         }
+
+        copyBaseAttributes(freshNbt, nbt);
 
         RecoveringFamiliar rf = new RecoveringFamiliar(
                 nbt,
@@ -198,24 +209,46 @@ public class ModEvents {
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         tickCounter = 0;
+        recentlyRevivedDeaths.clear();
     }
 
     @SubscribeEvent
     public static void onFamiliarDrops(LivingDropsEvent event) {
         if (event.getEntity().level().isClientSide()) return;
-        if (!Config.ENABLE_RESURRECTION.get()) return;
-
-        MinecraftServer server = event.getEntity().getServer();
-        if (server == null) return;
 
         UUID entityUUID = event.getEntity().getUUID();
-        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+        if (recentlyRevivedDeaths.remove(entityUUID)) {
+            event.setCanceled(true);
+        }
+    }
 
-        if (!tracker.isTracked(entityUUID)) return;
+    private static void copyBaseAttributes(CompoundTag from, CompoundTag to) {
+        if (!from.contains("attributes")) return;
+        ListTag fromList = from.getList("attributes", Tag.TAG_COMPOUND);
+        ListTag toList = to.getList("attributes", Tag.TAG_COMPOUND);
 
-        ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
-        if (!entry.snapshot().revival()) return;
+        for (int i = 0; i < fromList.size(); i++) {
+            CompoundTag fromAttr = fromList.getCompound(i);
+            String id = fromAttr.getString("id");
+            if (id.isEmpty() || !fromAttr.contains("base")) continue;
+            double base = fromAttr.getDouble("base");
 
-        event.setCanceled(true);
+            boolean found = false;
+            for (int j = 0; j < toList.size(); j++) {
+                CompoundTag toAttr = toList.getCompound(j);
+                if (toAttr.getString("id").equals(id)) {
+                    toAttr.putDouble("base", base);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                CompoundTag newAttr = new CompoundTag();
+                newAttr.putString("id", id);
+                newAttr.putDouble("base", base);
+                toList.add(newAttr);
+            }
+        }
+        to.put("attributes", toList);
     }
 }
