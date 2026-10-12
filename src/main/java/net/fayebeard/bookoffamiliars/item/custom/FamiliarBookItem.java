@@ -59,15 +59,15 @@ public class FamiliarBookItem extends Item {
 
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
         if (Config.ENTITY_BLACKLIST.get().contains(entityId)) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.cannot_be_stored").withStyle(style -> style.withColor(0xFF5555)));
-            return false;
+            player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                    .withStyle(style -> style.withColor(0xFF5555)), true);
+            return true;
         }
 
         FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
-        int currentTotal = data.getFamiliars().size() + data.getRecovering().size();
-        int max = Config.MAX_FAMILIARS.get();
-        if (currentTotal >= max) {
-            player.sendSystemMessage(Component.translatable("bookoffamiliars.book_full", max).withStyle(style -> style.withColor(0xFF5555)));
+        if (data.isFull(Config.MAX_FAMILIARS.get())) {
+            player.displayClientMessage(Component.translatable("bookoffamiliars.book_full", Config.MAX_FAMILIARS.get())
+                    .withStyle(style -> style.withColor(0xFF5555)), true);
             return true;
         }
 
@@ -82,8 +82,9 @@ public class FamiliarBookItem extends Item {
 
         if (entity instanceof TamableAnimal tamableAnimal) {
             if (!tamableAnimal.isTame() || !tamableAnimal.isOwnedBy(player)) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFF5555)));
-                return false;
+                player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+                return true;
             }
 
             tamableAnimal.stopRiding();
@@ -96,8 +97,9 @@ public class FamiliarBookItem extends Item {
         } else if (entity instanceof AbstractHorse horse) {
             UUID ownerUUID = horse.getOwnerUUID();
             if (!horse.isTamed() || (ownerUUID != null && !ownerUUID.equals(player.getUUID()))) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFF5555)));
-                return false;
+                player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+                return true;
             }
 
             horse.stopRiding();
@@ -112,8 +114,9 @@ public class FamiliarBookItem extends Item {
             Optional<UUID> likedPlayer = allay.getBrain()
                     .getMemory(MemoryModuleType.LIKED_PLAYER);
             if (likedPlayer.isEmpty() || !likedPlayer.get().equals(player.getUUID())) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFF5555)));
-                return false;
+                player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+                return true;
             }
 
             allay.stopRiding();
@@ -162,8 +165,9 @@ public class FamiliarBookItem extends Item {
             }
 
             if (!trustsPlayer) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.not_your_familiar").withStyle(style -> style.withColor(0xFF5555)));
-                return false;
+                player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+                return true;
             }
 
             entityType = fox.getType().getDescriptionId();
@@ -179,7 +183,11 @@ public class FamiliarBookItem extends Item {
                     ? entity.getCustomName().getString()
                     : entity.getType().getDescription().getString();
         } else {
-            return false;
+            if (!(entity instanceof Player)) {
+                player.displayClientMessage(Component.translatable("bookoffamiliars.not_your_familiar")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+            }
+            return true;
         }
 
         float currentHealth = 0f;
@@ -212,7 +220,8 @@ public class FamiliarBookItem extends Item {
         player.playNotifySound(ModSounds.FAMILIAR_STORE.get(), SoundSource.PLAYERS, 0.25f, 1.0f);
 
         if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_stored", displayName).withStyle(style -> style.withColor(0x55FF55)));
+            serverPlayer.displayClientMessage(Component.translatable("bookoffamiliars.familiar_stored", displayName)
+                    .withStyle(style -> style.withColor(0x55FF55)), true);
         }
 
         return true;

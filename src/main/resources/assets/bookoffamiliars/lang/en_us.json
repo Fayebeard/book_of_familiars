@@ -55,12 +55,10 @@
   "bookoffamiliars.recovering_in": "Recovering: %s",
   "bookoffamiliars.skip_cooldown": "Skip(%d lvls)",
   "bookoffamiliars.delete_button": "Delete",
-  "bookoffamiliars.delete_confirm_line1": "Are you sure?",
-  "bookoffamiliars.delete_confirm_line2": "This will permanently delete %s from the world.",
+  "bookoffamiliars.confirm_line1": "Are you sure?",
+  "bookoffamiliars.delete_confirm_line2": "This will delete %s from the book",
   "bookoffamiliars.familiar_recovering_full": "%s has died but your book is full. They will be added when space is available.",
-  "bookoffamiliars.familiar_removed_missing_mod": "%s was removed from your book because their mod is no longer installed.",
   "bookoffamiliars.familiar_pending_moved": "%s is now recovering in your book.",
-  "bookoffamiliars.revival_confirm_line1": "Are you sure?",
   "bookoffamiliars.revival_confirm_disable": "This familiar will no longer be revived after death.",
   "bookoffamiliars.revival_confirm_enable": "This familiar will be revived after death.",
   "bookoffamiliars.recall_button": "Recall",
@@ -69,5 +67,6 @@
   "bookoffamiliars.familiar_not_found": "Your familiar could not be located. Try again when they are in a loaded area.",
   "bookoffamiliars.last_known_location": "%s, %s, %s",
   "bookoffamiliars.last_known_dimension": "%s",
-  "bookoffamiliars.familiar_deleted_world": "Familiar removed from tracking. If they were out of loaded range, they may still exist in the world."
+  "bookoffamiliars.delete_confirm_line2_release": "%s will be released into the world and deleted from the book.",
+  "bookoffamiliars.release_failed": "Couldn't release your familiar. Try again later."
 }

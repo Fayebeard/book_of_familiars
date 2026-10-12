@@ -13,6 +13,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -22,7 +23,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
 public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
 
@@ -42,6 +42,36 @@ public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
         return TYPE;
     }
 
+    public static Entity loadFamiliarEntity(ServerPlayer player, StoredFamiliar familiar) {
+        return EntityType.loadEntityRecursive(familiar.nbt(), player.serverLevel(), e -> e);
+    }
+
+    public static boolean placeFamiliar(ServerPlayer player, Entity entity) {
+        ServerLevel level = player.serverLevel();
+
+        double angle = Math.toRadians(player.getYRot());
+        entity.moveTo(player.getX() - Math.sin(angle) * 2, player.getY(),
+                player.getZ() + Math.cos(angle) * 2, player.getYRot(), 0);
+
+        if (!level.noCollision(entity)) {
+            entity.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0);
+            if (!level.noCollision(entity)) {
+                player.displayClientMessage(Component.translatable("bookoffamiliars.no_room")
+                        .withStyle(style -> style.withColor(0xFF5555)), true);
+                return false;
+            }
+        }
+        if (!level.addFreshEntity(entity)) {
+            player.displayClientMessage(Component.translatable("bookoffamiliars.release_failed")
+                    .withStyle(style -> style.withColor(0xFF5555)), true);
+            return false;
+        }
+        level.sendParticles(ParticleTypes.WITCH, entity.getX(),entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
+                50, 0.5, 0.5, 0.5, 0.5);
+        player.playNotifySound(ModSounds.FAMILIAR_RELEASE.get(), SoundSource.PLAYERS, 0.25f, 1.0f);
+        return true;
+    }
+
     public static void handle(ReleaseFamiliarPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
@@ -58,63 +88,36 @@ public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
 
             StoredFamiliar familiar = familiars.get(index);
 
-            Entity entity = EntityType.loadEntityRecursive(familiar.nbt(), player.serverLevel(), e -> e);
-            if (entity != null) {
-                double angle = Math.toRadians(player.getYRot());
-                double offsetX = -Math.sin(angle) * 2;
-                double offsetZ = Math.cos(angle) * 2;
+            Entity entity = loadFamiliarEntity(player, familiar);
+            if (entity == null) return;
+            if (!placeFamiliar(player, entity)) return;
 
-                double targetX = player.getX() + offsetX;
-                double targetY = player.getY();
-                double targetZ = player.getZ() + offsetZ;
+            MinecraftServer server = player.getServer();
+            if (server == null) return;
+            ReleasedFamiliarTracker.get(server.overworld()).track(entity.getUUID(), player.getUUID(), familiar,
+                    entity.blockPosition(), player.serverLevel().dimension());
+            data.removeFamiliar(packet.index);
 
-                entity.moveTo(targetX, targetY, targetZ, player.getYRot(), 0);
-
-                if (!player.serverLevel().noCollision(entity)) {
-                    entity.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0);
-
-                    if (!player.serverLevel().noCollision(entity)) {
-                        player.sendSystemMessage(Component.translatable("bookoffamiliars.no_room").withStyle(style -> style.withColor(0xFF5555)));
-                        return;
-                    }
-                }
-                player.serverLevel().addFreshEntity(entity);
-
-                UUID entityUUID = entity.getUUID();
-                MinecraftServer server = player.getServer();
-                if (server == null) return;
-
-                if (Config.ENABLE_TRACKING.get()) {
-                    ReleasedFamiliarTracker.get(server.overworld()).track(entityUUID, player.getUUID(), familiar,
-                            entity.blockPosition(), player.serverLevel().dimension());
-                }
-
-                player.serverLevel().sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
-                        50, 0.5, 0.5, 0.5, 0.5);
-                data.removeFamiliar(index);
-                player.playNotifySound(ModSounds.FAMILIAR_RELEASE.get(), SoundSource.PLAYERS, 0.25f, 1.0f);
-
-                PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
-                if (pending.hasPending(player.getUUID())) {
-                    List<RecoveringFamiliar> waiting = pending.drainPending(player.getUUID());
-                    for (RecoveringFamiliar rf : waiting) {
-                        if (data.isFull(Config.MAX_FAMILIARS.get())) {
-                            pending.addPending(player.getUUID(), rf);
-                        } else {
-                            data.addRecovering(rf);
-                            player.sendSystemMessage(Component.translatable(
+            PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
+            if (pending.hasPending(player.getUUID())) {
+                List<RecoveringFamiliar> waiting = pending.drainPending(player.getUUID());
+                for (RecoveringFamiliar rf : waiting) {
+                    if (data.isFull(Config.MAX_FAMILIARS.get())) {
+                        pending.addPending(player.getUUID(), rf);
+                    } else {
+                        data.addRecovering(rf);
+                        player.sendSystemMessage(Component.translatable(
                                     "bookoffamiliars.familiar_pending_moved", rf.displayName()).withStyle(style -> style.withColor(0xFFAA00)));
-                        }
                     }
                 }
-
-                List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
-                        ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
-                        : List.of();
-
-                long currentGameTime = player.serverLevel().getGameTime();
-                PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
             }
+
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
+
+            long currentGameTime = player.serverLevel().getGameTime();
+            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         });
     }
 }
