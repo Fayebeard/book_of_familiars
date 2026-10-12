@@ -14,13 +14,14 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
-public record DeleteFamiliarPacket(int index, boolean isRecovering) implements CustomPacketPayload {
+public record DeleteFamiliarPacket(int index) implements CustomPacketPayload {
 
     public static final Type<DeleteFamiliarPacket> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath("bookoffamiliars", "delete_familiar"));
@@ -29,8 +30,6 @@ public record DeleteFamiliarPacket(int index, boolean isRecovering) implements C
             StreamCodec.composite(
                     ByteBufCodecs.INT,
                     DeleteFamiliarPacket::index,
-                    ByteBufCodecs.BOOL,
-                    DeleteFamiliarPacket::isRecovering,
                     DeleteFamiliarPacket::new
             );
 
@@ -52,17 +51,18 @@ public record DeleteFamiliarPacket(int index, boolean isRecovering) implements C
 
             MinecraftServer server = player.level().getServer();
 
-            if (packet.isRecovering()) {
-                if (packet.index() < 0 || packet.index() >= data.getRecovering().size()) return;
-                data.removeRecovering(packet.index());
-            } else {
-                if (packet.index() < 0 || packet.index() >= data.getFamiliars().size()) return;
-                StoredFamiliar familiar = data.getFamiliars().get(packet.index());
-                CompoundTag nbt = familiar.nbt();
-                nbt.read("UUID", UUIDUtil.CODEC).ifPresent(uuid ->
-                        ReleasedFamiliarTracker.get(server.overworld()).remove(uuid));
-                data.removeFamiliar(packet.index());
+            if (packet.index() < 0 || packet.index() >= data.getFamiliars().size()) return;
+            StoredFamiliar familiar = data.getFamiliars().get(packet.index());
+
+            CompoundTag nbt = familiar.nbt();
+            nbt.read("UUID", UUIDUtil.CODEC).ifPresent(uuid ->
+                    ReleasedFamiliarTracker.get(server.overworld()).remove(uuid));
+
+            Entity entity = ReleaseFamiliarPacket.loadFamiliarEntity(player, familiar);
+            if (entity != null && !ReleaseFamiliarPacket.placeFamiliar(player, entity)) {
+                return;
             }
+            data.removeFamiliar(packet.index());
 
             PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
             if (pending.hasPending(player.getUUID())) {

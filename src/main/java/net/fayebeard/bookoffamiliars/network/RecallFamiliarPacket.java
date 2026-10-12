@@ -67,7 +67,7 @@ public record RecallFamiliarPacket(UUID familiarUUID) implements CustomPacketPay
             FamiliarBookData data = player.getData(ModAttachments.FAMILIAR_DATA);
             int max = Config.MAX_FAMILIARS.get();
             if (data.isFull(max)) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.book_full", max)
+                player.sendOverlayMessage(Component.translatable("bookoffamiliars.book_full", max)
                         .withStyle(style -> style.withColor(0xFFFF5555)));
                 return;
             }
@@ -82,7 +82,7 @@ public record RecallFamiliarPacket(UUID familiarUUID) implements CustomPacketPay
             }
 
             if (found == null) {
-                player.sendSystemMessage(Component.translatable("bookoffamiliars.familiar_not_found")
+                player.sendOverlayMessage(Component.translatable("bookoffamiliars.familiar_not_found")
                         .withStyle(style -> style.withColor(0xFFFF5555)));
                 return;
             }
@@ -114,8 +114,9 @@ public record RecallFamiliarPacket(UUID familiarUUID) implements CustomPacketPay
                     currentHealth, maxHealth, speed, attackDamage, hasAttackDamage, itemCount,
                     oldSnapshot.revival());
 
-            found.discard();
+            found.stopRiding();
             tracker.remove(packet.familiarUUID());
+            found.discard();
             data.addFamiliar(recalled);
 
             ModUtils.playSound(player, ModSounds.FAMILIAR_STORE.get());

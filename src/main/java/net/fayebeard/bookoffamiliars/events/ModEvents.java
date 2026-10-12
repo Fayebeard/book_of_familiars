@@ -6,11 +6,13 @@ import net.fayebeard.bookoffamiliars.attachment.ModAttachments;
 import net.fayebeard.bookoffamiliars.data.*;
 import net.fayebeard.bookoffamiliars.network.OpenFamiliarBookPacket;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -64,7 +66,7 @@ public class ModEvents {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onFamiliarDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
@@ -72,8 +74,9 @@ public class ModEvents {
         if (server == null) return;
 
         UUID entityUUID = event.getEntity().getUUID();
-        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
+        recentlyRevivedDeaths.remove(entityUUID);
 
+        ReleasedFamiliarTracker tracker = ReleasedFamiliarTracker.get(server.overworld());
         if (!tracker.isTracked(entityUUID)) return;
 
         ReleasedFamiliarTracker.ReleasedEntry entry = tracker.getEntry(entityUUID);
@@ -103,6 +106,8 @@ public class ModEvents {
         } else {
             nbt.remove("equipment");
         }
+
+        copyBaseAttributes(freshNbt, nbt);
 
         RecoveringFamiliar rf = new RecoveringFamiliar(
                 nbt,
@@ -197,5 +202,36 @@ public class ModEvents {
         if (recentlyRevivedDeaths.remove(entityUUID)) {
             event.setCanceled(true);
         }
+    }
+
+    private static void copyBaseAttributes(CompoundTag from, CompoundTag to) {
+        if (!from.contains("attributes")) return;
+        ListTag fromList = from.getListOrEmpty("attributes");
+        ListTag toList = to.getListOrEmpty("attributes");
+
+        for (int i = 0; i < fromList.size(); i++) {
+            CompoundTag fromAttr = fromList.getCompoundOrEmpty(i);
+            String id = fromAttr.getStringOr("id", "");
+            if (id.isEmpty() || !fromAttr.contains("base")) continue;
+            double base = fromAttr.getDoubleOr("base", 0.0);
+
+            boolean found = false;
+            for (int j = 0; j < toList.size(); j++) {
+                CompoundTag toAttr = toList.getCompoundOrEmpty(j);
+                if (toAttr.getStringOr("id", "").equals(id)) {
+                    toAttr.putDouble("base", base);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                CompoundTag newAttr = new CompoundTag();
+                newAttr.putString("id", id);
+                newAttr.putDouble("base", base);
+                toList.add(newAttr);
+            }
+        }
+        to.put("attributes", toList);
     }
 }

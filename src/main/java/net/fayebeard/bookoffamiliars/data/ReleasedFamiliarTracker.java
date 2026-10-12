@@ -29,8 +29,8 @@ public class ReleasedFamiliarTracker extends SavedData {
                     Codec.STRING.xmap(UUID::fromString, UUID::toString)
                             .fieldOf("playerUUID").forGetter(ReleasedEntry::playerUUID),
                     StoredFamiliar.CODEC.fieldOf("snapshot").forGetter(ReleasedEntry::snapshot),
-                    BlockPos.CODEC.fieldOf("position").forGetter(ReleasedEntry::position),
-                    ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension").forGetter(ReleasedEntry::dimension)
+                    BlockPos.CODEC.optionalFieldOf("position", BlockPos.ZERO).forGetter(ReleasedEntry::position),
+                    ResourceKey.codec(Registries.DIMENSION).optionalFieldOf("dimension", Level.OVERWORLD).forGetter(ReleasedEntry::dimension)
             ).apply(instance, ReleasedEntry::new));
 
     public static final SavedDataType<ReleasedFamiliarTracker> TYPE = new SavedDataType<>(

@@ -24,7 +24,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
-import java.util.UUID;
 
 public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
 
@@ -43,6 +42,38 @@ public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
         return TYPE;
     }
 
+    public static Entity loadFamiliarEntity(ServerPlayer player, StoredFamiliar familiar) {
+        return EntityType.loadEntityRecursive(familiar.nbt(), player.level(), EntitySpawnReason.LOAD, e -> e);
+    }
+
+    public static boolean placeFamiliar(ServerPlayer player, Entity entity) {
+        ServerLevel level = player.level();
+
+        double angle = Math.toRadians(player.getYRot());
+        entity.setPos(player.getX() - Math.sin(angle) * 2, player.getY(),
+                player.getZ() + Math.cos(angle) * 2);
+        entity.setYRot(player.getYRot());
+
+        if (!level.noCollision(entity)) {
+            entity.setPos(player.getX(), player.getY(), player.getZ());
+            entity.setYRot(player.getYRot());
+            if (!level.noCollision(entity)) {
+                player.sendOverlayMessage(Component.translatable("bookoffamiliars.no_room")
+                        .withStyle(style -> style.withColor(0xFFFF5555)));
+                return false;
+            }
+        }
+        if (!level.addFreshEntity(entity)) {
+            player.sendOverlayMessage(Component.translatable("bookoffamiliars.release_failed")
+                    .withStyle(style -> style.withColor(0xFFFF5555)));
+            return false;
+        }
+        level.sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
+                50, 0.5, 0.5, 0.5, 0.5);
+        ModUtils.playSound(player, ModSounds.FAMILIAR_RELEASE.get());
+        return true;
+    }
+
     public static void handle(ReleaseFamiliarPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
@@ -59,66 +90,36 @@ public record ReleaseFamiliarPacket(int index) implements CustomPacketPayload {
 
             StoredFamiliar familiar = familiars.get(index);
 
-            ServerLevel level = player.level();
-            Entity entity = EntityType.loadEntityRecursive(familiar.nbt(), level, EntitySpawnReason.LOAD, e -> e);
-            if (entity != null) {
-                double angle = Math.toRadians(player.getYRot());
-                double offsetX = -Math.sin(angle) * 2;
-                double offsetZ = Math.cos(angle) * 2;
+            Entity entity = loadFamiliarEntity(player, familiar);
+            if (entity == null) return;
+            if (!placeFamiliar(player, entity)) return;
 
-                double targetX = player.getX() + offsetX;
-                double targetY = player.getY();
-                double targetZ = player.getZ() + offsetZ;
+            MinecraftServer server = player.level().getServer();
 
-                entity.setPos(targetX, targetY, targetZ);
-                entity.setYRot(player.getYRot());
+            ReleasedFamiliarTracker.get(server.overworld()).track(entity.getUUID(), player.getUUID(), familiar,
+                    entity.blockPosition(), player.level().dimension());
+            data.removeFamiliar(index);
 
-                if (!level.noCollision(entity)) {
-                    entity.setPos(player.getX(), player.getY(), player.getZ());
-                    entity.setYRot(player.getYRot());
-
-                    if (!level.noCollision(entity)) {
-                        player.sendSystemMessage(Component.translatable("bookoffamiliars.no_room").withStyle(style -> style.withColor(0xFFFF5555)));
-                        return;
-                    }
-                }
-
-                level.addFreshEntity(entity);
-
-                UUID entityUUID = entity.getUUID();
-                MinecraftServer server = player.level().getServer();
-
-                if (Config.ENABLE_TRACKING.get()) {
-                    ReleasedFamiliarTracker.get(server.overworld()).track(entityUUID, player.getUUID(), familiar,
-                            entity.blockPosition(), player.level().dimension());
-                }
-
-                level.sendParticles(ParticleTypes.WITCH, entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
-                        50, 0.5, 0.5, 0.5, 0.5);
-                data.removeFamiliar(index);
-                ModUtils.playSound(player, ModSounds.FAMILIAR_RELEASE.get());
-
-                PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
-                if (pending.hasPending(player.getUUID())) {
-                    List<RecoveringFamiliar> waiting = pending.drainPending(player.getUUID());
-                    for (RecoveringFamiliar rf : waiting) {
-                        if (data.isFull(Config.MAX_FAMILIARS.get())) {
-                            pending.addPending(player.getUUID(), rf);
-                        } else {
-                            data.addRecovering(rf);
-                            player.sendSystemMessage(Component.translatable(
+            PendingRecoveryData pending = PendingRecoveryData.get(server.overworld());
+            if (pending.hasPending(player.getUUID())) {
+                List<RecoveringFamiliar> waiting = pending.drainPending(player.getUUID());
+                for (RecoveringFamiliar rf : waiting) {
+                    if (data.isFull(Config.MAX_FAMILIARS.get())) {
+                        pending.addPending(player.getUUID(), rf);
+                    } else {
+                        data.addRecovering(rf);
+                        player.sendSystemMessage(Component.translatable(
                                     "bookoffamiliars.familiar_pending_moved", rf.displayName()).withStyle(style -> style.withColor(0xFFFFAA00)));
-                        }
                     }
                 }
-
-                List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
-                        ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
-                        : List.of();
-
-                long currentGameTime = player.level().getGameTime();
-                PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
             }
+
+            List<TrackedFamiliar> tracked = Config.ENABLE_TRACKING.get()
+                    ? ReleasedFamiliarTracker.get(server.overworld()).getEntriesForPlayer(player.getUUID(), server)
+                    : List.of();
+
+            long currentGameTime = player.level().getGameTime();
+            PacketDistributor.sendToPlayer(player, new OpenFamiliarBookPacket(data.getFamiliars(), data.getRecovering(), tracked, currentGameTime));
         });
     }
 }
